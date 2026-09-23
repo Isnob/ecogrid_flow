@@ -1,3 +1,71 @@
-## ecogrid_repo
-### Description
-...
+# 🌱 EcoGrid Flow: On-Premise Compute Cost & Carbon Optimizer
+
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
+[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
+
+**EcoGrid Flow** — On-Premise аналитический B2B-сервис и рекомендательная система для оптимизации расписания и пространственной маршрутизации (*Geo-Arbitrage*) ресурсоемких серверных вычислений (обучение нейросетей, регулярные dbt/Spark пайплайны, рендеринг, бэкапы).
+
+Проект разрабатывается в рамках сквозной проектной работы по дисциплине **«Программная инженерия»** (профиль «Инженерия данных», 3 курс, 5-й семестр).
+
+---
+
+## 👥 Команда «Шпингалеты» (*Shpingalets*)
+
+| Участник | Роль в проекте | Основная зона ответственности |
+| :--- | :--- | :--- |
+| **Богдан Леонов** | **Team Lead / PO / Data Engineer** | Управление бэклогом, архитектура данных, ETL-пайплайны, алгоритмы Geo-Arbitrage |
+| **Александр Зейферт** | **Lead Backend / DevOps** | Ядро FastAPI, архитектура PostgreSQL, Docker Compose, CI/CD |
+| **Максим Томов** | **Frontend Developer** | Корпоративный веб-портал на React / TypeScript, ECharts дашборды, карта цен |
+| **Арина Антонова** | **Data Analyst / ML Engineer** | Исследование исторических рядов (EDA), физическая модель PUE, ML-прогнозирование |
+| **Григорий Витрик** | **QA Engineer** | Валидация Data Quality, нагрузочные тесты, автотесты `pytest`, мокирование API |
+
+---
+
+## 🏛️ Ключевая концепция и архитектура
+
+Сервис поставляется как изолированная Docker-композиция и развертывается **строго внутри закрытого корпоративного периметра (On-Premise VPC)** клиента. Данные о топологии ЦОД, серверах и задачах компании никогда не покидают защищенный контур.
+
+```
+Внешний интернет:
+[ENTSO-E (Day-Ahead / Gen)] + [Open-Meteo (Погода)]
+                     │ (XML / JSON)
+                     ▼
+Закрытый On-Premise контур клиента:
+[ETL Ingestion Workers] ──► [Data Quality Validation]
+                                    │
+                                    ▼
+                        [PostgreSQL (Timeseries)]
+                                    │
+[Airflow / DataOps] ──► [FastAPI Gateway] ──► [Optimization & ML Engine (PUE + Geo)]
+                                    │
+                                    ▼
+                         [React Web UI Portal]
+```
+
+---
+
+## 📁 Структура репозитория и документация
+
+* **[seminar_1/README.md](file:///Users/bogdanleonov/FU/program%20eng/ecogrid_repo/seminar_1/README.md)** — **Материалы Семинара 1:** официальный Паспорт проекта, матрица ролей, жизненный цикл данных и сценарий защиты.
+* **[znaniya.md](file:///Users/bogdanleonov/FU/program%20eng/ecogrid_repo/znaniya.md)** — Полное техническое описание архитектуры, каталог из 7 источников данных, слои хранилища и схемы Data Flow.
+* **[znaniya.docx](file:///Users/bogdanleonov/FU/program%20eng/ecogrid_repo/znaniya.docx)** — Сверстанный документ архитектуры в формате Word со схемами, диаграммами и альбомным каталогом источников.
+
+---
+
+## 🎯 Границы MVP (Release 50% — Декабрь 2026)
+
+* **Реализуется в первом семестре:**
+  1. Автоматический сбор Day-Ahead тарифов биржи и прогнозов погоды по целевым энергозонам (DE, FI, SE, UK).
+  2. Data Quality валидация входящих временных рядов.
+  3. Физико-математическая модель расчета динамического PUE охлаждения дата-центров по уличной температуре.
+  4. Движок оптимизации скользящего окна запуска под SLA-дедлайн задачи.
+  5. Пространственный арбитраж (Geo-Arbitrage) между несколькими ЦОД.
+  6. Защищенный REST API (FastAPI) с интерактивной Swagger-документацией.
+  7. Веб-портал (React SPA) с картой тарифов и симулятором экономии.
+* **Вынесено во 2-й семестр (Release 100%):**
+  * Обучение собственной ML-модели на 5-летнем архиве для прогнозирования тарифов на 3–7 дней вперед.
+  * Прямая интеграция с Cloud API для автоматического запуска/остановки инстансов.
+  * Нативный провайдер (Sensor/Operator) под Apache Airflow.
