@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EcoGrid Flow</title>
+    <link rel="stylesheet" href="style.css">
+
+  
+</head>
+
+<body>
+
+    <!-- Шапка -->
+    <header class="header">
+        <div class="logo">
+            EcoGrid <span class="caligraf"> Flow </span>
+        </div>
+
+        <nav class="navigation">
+            <a href="#">Главная</a>
+            <a href="#">Аналитика</a>
+            <a href="#">Карта ЦОД</a>
+        </nav>
+    </header>
+    
+
+
+    <!-- Основная часть страницы -->
+    <main class="main">
+
+        <!-- Форма создания задачи -->
+        <section class="task-form-container">
+
+            <h1>Параметры задачи</h1>
+
+            <p class="description">
+                Укажите параметры вычислительной задачи
+            </p>
+
+
+            <form id="taskForm">
+
+                <!-- Название задачи -->
+                <div class="form-group">
+
+                    <label for="taskName">
+                        Название задачи
+                    </label>
+
+                    <input
+                        type="text"
+                        id="taskName"
+                        name="taskName"
+                        placeholder="Например: Обучение ML-модели"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Длительность и дедлайн -->
+                <div class="form-row">
+
+                    <div class="form-group">
+
+                        <label for="duration">
+                            Длительность вычислений, часы
+                        </label>
+
+                        <input
+                            type="number"
+                            id="duration"
+                            name="duration"
+                            min="1"
+                            placeholder="24"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="deadline">
+                            Дедлайн выполнения (UTC)
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="deadline"
+                            name="deadline"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <!-- Мощность -->
+                <div class="form-group">
+
+                    <label for="power">
+                        Потребляемая мощность серверов, кВт
+                    </label>
+
+                    <input
+                        type="number"
+                        id="power"
+                        name="power"
+                        min="0"
+                        step="1"
+                        placeholder="10"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Регионы -->
+                <div class="form-group">
+
+                    <p class="regions-title">
+                        Доступные регионы / ЦОД
+                    </p>
+
+
+                    <div class="regions">
+
+                        <label class="region">
+
+                            <input
+                                type="checkbox"
+                                name="regions"
+                                value="FI"
+                            >
+
+                            Финляндия
+
+                        </label>
+
+
+                        <label class="region">
+
+                            <input
+                                type="checkbox"
+                                name="regions"
+                                value="SE"
+                            >
+
+                            Швеция
+
+                        </label>
+
+
+                        <label class="region">
+
+                            <input
+                                type="checkbox"
+                                name="regions"
+                                value="DE"
+                            >
+
+                            Германия
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Кнопка -->
+                <button type="submit" class="submit-button">
+
+                    Рассчитать оптимальное окно
+
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- Место для будущего графика -->
+        <section class="content-placeholder">
+
+            <h2>
+                Оптимизация вычислений
+            </h2>
+
+            <p>
+                Здесь позже будет отображаться график стоимости
+                электроэнергии и результаты расчёта.
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <!-- Подключение JavaScript -->
+    <script src="script.js"></script>
+
+</body>
+</html>
