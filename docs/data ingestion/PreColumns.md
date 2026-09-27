@@ -1,4 +1,5 @@
 # ENTSO-E Transparency Platform — Day-Ahead Prices
+## table name: entsoe_day_ahead_prices
 
 | Поле | Бизнес-название | Пояснение |
 |---|---|---|
@@ -11,6 +12,7 @@
 | resolution | Шаг временного ряда | Шаг временного ряда, например PT60M или PT15M |
 
 # ENTSO-E Transparency Platform — Generation / Energy Mix
+## table name: entsoe_day_ahead_generation
 
 | Поле | Бизнес-название | Пояснение |
 |---|---|---|
@@ -22,6 +24,7 @@
 | resolution | Временной шаг данных | Временной шаг данных |
 
 # Open-Meteo Forecast API
+## table name: open_meteo_forecast
 
 | Поле | Бизнес-название | Пояснение |
 |---|---|---|
@@ -37,6 +40,7 @@
 | retrieved_at | Время получения | Когда именно мы получили этот прогноз |
 
 # Open-Meteo Historical Weather
+## table name: open_meteo_historical_weather
 
 | Поле | Бизнес-название | Пояснение |
 |---|---|---|
@@ -51,6 +55,7 @@
 | shortwave_radiation | Солнечная радиация | Историческая солнечная радиация |
 
 # Справочник инфраструктуры клиента 
+## table name: datacenters
 
 | Поле | Бизнес-название | Пояснение |
 |---|---|---|
@@ -65,6 +70,7 @@
 | created_at | Регистрация ЦОД | Когда ЦОД зарегистрирован в системе |
 
 # Параметры вычислительной задачи
+## table name: jobs
 
 | Поле | Бизнес-название | Пояснение |
 |---|---|---|
@@ -79,6 +85,7 @@
 | created_at | Поступление задачи | Когда задача поступила |
 
 # Внутренние журналы задач и результаты рекомендаций
+## table name: recommendations
 
 | Поле | Бизнес-название | Пояснение |
 |---|---|---|
