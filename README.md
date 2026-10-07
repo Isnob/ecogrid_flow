@@ -52,7 +52,7 @@
 * **[docs/seminar_1/README.md](docs/seminar_1/README.md)** — Семинар 1: паспорт проекта, роли, границы MVP.
 * **[docs/seminar_2/README.md](docs/seminar_2/README.md)** — Семинар 2: Kanban-процесс, бэклог, Definition of Done.
 * **[docs/seminar_3/README.md](docs/seminar_3/README.md)** — Семинар 3: стейкхолдеры, глоссарий, AS-IS / TO-BE, контекстная диаграмма.
-* **[docs/seminar_4/readme.md](docs/seminar_4/readme.md)** — Семинар 4: требования v1.0.1 (FR / NFR / DR), критерии приемки, ASR.
+* **[docs/seminar_4/readme.md](docs/seminar_4/readme.md)** — Семинар 4: требования v1.1.0 (FR / NFR / DR), критерии приемки, ASR.
 * **[docs/seminar_5/README.md](docs/seminar_5/README.md)** — Семинар 5: устав проекта, WBS, дорожная карта, RACI.
 * **[docs/data ingestion/](docs/data%20ingestion/)** — каталог источников данных и описание полей таблиц.
 * **[docs/status/](docs/status/)** — еженедельные статус-отчеты проекта.
@@ -62,7 +62,7 @@
 ## 🎯 Границы MVP (Release 50% — Декабрь 2026)
 
 * **Реализуется в первом семестре:**
-  1. Автоматический сбор Day-Ahead тарифов биржи и прогнозов погоды по целевым энергозонам (DE, FI, SE, UK).
+  1. Автоматический сбор Day-Ahead тарифов биржи и прогнозов погоды по целевым энергозонам (`DE-LU`, `FI`, `SE3`).
   2. Data Quality валидация входящих временных рядов.
   3. Физико-математическая модель расчета динамического PUE охлаждения дата-центров по уличной температуре.
   4. Движок оптимизации скользящего окна запуска под SLA-дедлайн задачи.

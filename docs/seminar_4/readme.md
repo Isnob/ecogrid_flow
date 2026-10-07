@@ -1,6 +1,6 @@
 # Семинар 4. Спецификация требований EcoGrid Flow (v1.0)
 
-**Версия документа:** `v1.0.1` (01.10.2026)  
+**Версия документа:** `v1.1.0` (07.10.2026)  
 **Статус:** Согласовано (Approved)  
 
 ---
@@ -61,7 +61,7 @@ graph LR
 * **Пользовательская история (User Story US-01):**
   > **Как** DataOps-инженер,  
   > **я хочу**, чтобы оркестратор Airflow автоматически запрашивал у сервиса EcoGrid Flow оптимальное время и площадку выполнения ночного batch-пайплайна,  
-  > **чтобы** снизить затраты на электроэнергию до 50% без риска сорвать утренний дедлайн готовности DWH-витрин (SLA 09:00 UTC).
+  > **чтобы** снизить затраты на электроэнергию без риска сорвать утренний дедлайн готовности DWH-витрин (SLA 09:00 UTC).
 * **Предусловие:** В БД `entsoe_day_ahead_prices` и `open_meteo_forecast` есть актуальные данные на глубину горизонта планирования.
 * **Основной поток (Main Flow):**
   1. Оркестратор отправляет HTTP POST-запрос на эндпоинт `/api/v1/recommendations` с метаданными задачи: длительность (`duration_minutes`), мощность (`required_power_kw`), крайний срок (`deadline`), допустимые локации (`allowed_zones`).
@@ -172,9 +172,9 @@ graph LR
 
 | Идентификатор | Сценарий | Категория | Описание требования |
 | :--- | :---: | :--- | :--- |
-| **FR-API-01** | UC-01, UC-02 | API Gateway | Система ДОЛЖНА предоставлять эндпоинт `POST /api/v1/recommendations`, принимающий параметры задачи: `job_id` (UUID/str), `duration_minutes` (int > 0), `required_power_kw` (float > 0), `deadline` (ISO 8601 UTC), `earliest_start` (ISO 8601 UTC, опционально, default: now) и `allowed_zones` (список строк). |
+| **FR-API-01** | UC-01, UC-02 | API Gateway | Система ДОЛЖНА предоставлять эндпоинт `POST /api/v1/recommendations`, принимающий параметры задачи: `job_id` (UUID/str), `duration_minutes` (int > 0), `required_power_kw` (float > 0), `deadline` (ISO 8601 UTC), `earliest_start` (ISO 8601 UTC, опционально, default: now), `allowed_zones` (список строк), а также опциональные параметры базового сценария `preferred_datacenter_id` (default: ЦОД первой зоны из `allowed_zones`) и `baseline_start` (ISO 8601 UTC, default: `earliest_start`). Если `preferred_datacenter_id` не входит в `allowed_zones` или `baseline_start` выходит за интервал [`earliest_start`; `deadline − duration_minutes`], запрос отклоняется с `422 Unprocessable Entity`. |
 | **FR-API-02** | UC-01 | API Gateway | Система ДОЛЖНА выполнять валидацию дедлайна и отклонять запрос с HTTP-статусом `422 Unprocessable Entity`, если `deadline < earliest_start + duration_minutes`. |
-| **FR-API-03** | UC-01, UC-05 | API Gateway | Ответ эндпоинта рекомендаций ДОЛЖЕН содержать: `recommendation_id`, `job_id`, `target_datacenter`, `recommended_start`, `recommended_end`, `estimated_cost_eur`, `baseline_cost_eur`, `estimated_savings_eur`, `estimated_savings_percent`, `is_fallback` (boolean). |
+| **FR-API-03** | UC-01, UC-05 | API Gateway | Ответ эндпоинта рекомендаций ДОЛЖЕН содержать: `recommendation_id`, `job_id`, `target_datacenter`, `recommended_start`, `recommended_end`, `estimated_cost_eur`, `baseline_cost_eur`, `estimated_savings_eur`, `estimated_savings_percent`, `is_fallback` (boolean). **Базовая стоимость** `baseline_cost_eur` — стоимость выполнения той же задачи в ЦОД `preferred_datacenter_id` со старта в `baseline_start`, рассчитанная по тем же ценам и модели PUE, что и рекомендация. Оркестратор вызывает API в момент, когда задача стартовала бы по своему cron, поэтому по умолчанию базовый сценарий — это текущее расписание клиента (AS-IS). `estimated_savings_eur = baseline_cost_eur − estimated_cost_eur`, `estimated_savings_percent = estimated_savings_eur / baseline_cost_eur × 100`. |
 | **FR-API-04** | UC-03 | API Gateway | Система ДОЛЖНА предоставлять эндпоинт `GET /api/v1/analytics/savings`, возвращающий агрегированные показатели сэкономленных средств (€) и сокращения выбросов $CO_2$ с группировкой по дням, неделям и месяцам за указанный диапазон дат. |
 | **FR-API-05** | UC-06 | API Gateway | Система ДОЛЖНА предоставлять административные эндпоинты `GET, POST, PUT /api/v1/datacenters` для управления реестром дата-центров компании. |
 | **FR-ENG-01** | UC-01, UC-02 | Optimization Core | Система ДОЛЖНА рассчитывать динамический PUE площадки на каждый час интервала как функцию уличной температуры: $PUE(T) = \text{base\_pue}$ при $T \le 15^\circ\text{C}$ (*Free Cooling*); $PUE(T) = \text{base\_pue} + 0.015 \times (T - 15)$ при $T > 15^\circ\text{C}$ (*Chiller Cooling*). |
@@ -189,7 +189,7 @@ graph LR
 | **FR-ETL-05** | UC-04 | Storage Layer | Запись данных в таблицы PostgreSQL ДОЛЖНА выполняться идемпотентно с использованием механизма `ON CONFLICT (primary_keys) DO UPDATE`. |
 | **FR-UI-01** | UC-02 | Web Interface | Пользовательский интерфейс ДОЛЖЕН отображать интерактивную цветовую карту энергозон присутствия компании с индикацией текущих биржевых цен. |
 | **FR-UI-02** | UC-02 | Web Interface | Веб-портал ДОЛЖЕН содержать форму симулятора задач с возможностью ввода мощности, длительности, дедлайна и наглядным графиком почасового распределения затрат. |
-| **FR-UI-03** | UC-03 | Web Interface | Дашборд ДОЛЖЕН отображать динамику сэкономленных средств в валюте евро и процент экономии относительно базового запуска cron. |
+| **FR-UI-03** | UC-03 | Web Interface | Дашборд ДОЛЖЕН отображать динамику сэкономленных средств в валюте евро и процент экономии относительно базовой стоимости `baseline_cost_eur` (определение — `FR-API-03`). |
 
 ---
 
@@ -260,6 +260,8 @@ erDiagram
         float required_power_kw
         timestamp earliest_start
         timestamp deadline
+        string preferred_datacenter_id FK
+        timestamp baseline_start
         boolean allow_geo_migration
     }
 
@@ -270,6 +272,7 @@ erDiagram
         timestamp recommended_start
         timestamp recommended_end
         float estimated_cost
+        float baseline_cost
         float estimated_savings
         boolean is_fallback
     }
@@ -286,7 +289,7 @@ erDiagram
 | **DR-03** | **`open_meteo_forecast`** | Регулярно каждые 3 часа | ~200–500 строк в сутки на 3–5 ЦОД | Партиционированная таблица PostgreSQL по месяцам. Поля: `datacenter_id, forecast_time, temperature_2m, relative_humidity_2m` | 3 месяца (ротация скользящим окном) | $\ge 99\%$ точек прогнозного горизонта | Температура: $[-50^\circ\text{C} \dots +50^\circ\text{C}]$; Влажность: $[0 \dots 100\%]$ | Прогноз обновлен не более 3.5 часов назад | Заполнение из смежного погодного прогноза ближайшего узла сетки |
 | **DR-04** | **`open_meteo_historical_weather`** | Разовый исторический архив за 3–5 лет + ежемесячный догруз | ~130–220 тыс. строк на 3–5 ЦОД | Партиционированная таблица PostgreSQL по годам. Поля: `datacenter_id, observed_at, temperature_2m, wind_speed_10m` | Бессрочно (для обучения ML) | $\ge 99.5\%$ | Физические границы климата Европы: $T \in [-45^\circ\text{C} \dots +45^\circ\text{C}]$, ветер $\le 60$ м/с | Ретроспективный архив | Линейная сплайн-интерполяция пропусков $\le 3$ часов |
 | **DR-05** | **`datacenters`** | Редко (при добавлении/изменении инфраструктуры) | 5–50 записей | Реляционный справочник PostgreSQL. Поля: `datacenter_id, name, bidding_zone, latitude, longitude, base_pue, max_power_kw` | Бессрочно | **100%** обязательных атрибутов | `base_pue >= 1.00`, `max_power_kw > 0`, широта $[-90 \dots 90]$, долгота $[-180 \dots 180]$ | Актуализация при изменении в течение 5 минут | Запрет сохранения невалидной записи (Check Constraint в БД) |
-| **DR-06** | **`jobs`** | По событию (при каждом запросе к API `/recommendations`) | 1 000 – 10 000 записей в сутки | Реляционная таблица PostgreSQL. Поля: `job_id, name, duration_minutes, required_power_kw, earliest_start, deadline` | 1 год | **100%** валидность входящего payload | `duration_minutes > 0`, `required_power_kw > 0`, `deadline > earliest_start` | Real-time (момент поступления запроса) | Возврат ошибки `422 Unprocessable Entity` клиенту, запись в БД не создается |
+| **DR-06** | **`jobs`** | По событию (при каждом запросе к API `/recommendations`) | 1 000 – 10 000 записей в сутки | Реляционная таблица PostgreSQL. Поля: `job_id, name, duration_minutes, required_power_kw, earliest_start, deadline, preferred_datacenter_id, baseline_start` | 1 год | **100%** валидность входящего payload | `duration_minutes > 0`, `required_power_kw > 0`, `deadline > earliest_start` | Real-time (момент поступления запроса) | Возврат ошибки `422 Unprocessable Entity` клиенту, запись в БД не создается |
 | **DR-07** | **`recommendations`** | По факту генерации рекомендации движком | ~365 тыс. – 3.65 млн записей в год | Партиционированная таблица PostgreSQL по месяцам. Поля: `recommendation_id, job_id, datacenter_id, recommended_start, savings` | 3 года | **100%** целостность | `recommended_end <= deadline`, `estimated_savings_percent >= 0.0`, `estimated_cost > 0` | Real-time (формируется до отправки ответа API) | Откат транзакции при ошибке генерации рекомендации |
 
 ---
@@ -322,6 +325,7 @@ Feature: Расчет оптимального окна запуска вычи�
     Then сервер возвращает HTTP-статус 200 в течение менее чем 200 миллисекунд
     And в JSON-ответе поле "target_datacenter" равно "FI-HELSINKI-01"
     And значение "recommended_end" не превышает "2026-11-10T08:00:00Z"
+    And значение "baseline_cost_eur" равно стоимости запуска в "DE-FRANKFURT-01" с "2026-11-10T00:00:00Z"
     And значение "estimated_savings_percent" строго больше 50.0
     And поле "is_fallback" равно false
     And в таблице "recommendations" появляется запись с "job_id" = "job-spark-agg-771"
@@ -510,12 +514,12 @@ sequenceDiagram
 | **FR-UI-02** | Форма симулятора | В работе | `ID24_EGF-18` | `feature/ID24_EGF-18-init-react-form` | `web/index.html`, `web/style.css` |
 | **NFR-MAINT-01** | Развертывание | В работе | `ID24_EGF-16` | `infra/ID24_EGF-16-postgres-docker-compose` | `docker-compose.yml` (PostgreSQL 16) |
 | **ASR-01** | Изоляция контура | В работе | `ID24_EGF-16` | `infra/ID24_EGF-16-postgres-docker-compose` | `docker-compose.yml` (egress-фильтрация ещё не настроена) |
-| **FR-API-01…05** | API Gateway | Запланировано | `ID24_EGF-14` | — | — |
-| **FR-ENG-01…04** | Оптимизатор и модель PUE | Запланировано | `ID24_EGF-15` | — | — |
-| **FR-ENG-05** | Fallback | Запланировано | `ID24_EGF-21` | — | — |
-| **FR-ETL-01…05** | Сбор данных и DQ | Запланировано | `ID24_EGF-17` | — | — |
-| **NFR-PERF-01** | Производительность | Запланировано | `ID24_EGF-25` | — | — |
-| **ASR-03** | Партиционирование | Запланировано | `ID24_EGF-16` | — | — |
+| **FR-API-01…05** | API Gateway | Запланировано | `ID24_EGF-10` | — | — |
+| **FR-ENG-01…04** | Оптимизатор и модель PUE | Запланировано | `ID24_EGF-11` | — | — |
+| **FR-ENG-05** | Fallback | Запланировано | `ID24_EGF-11` | — | — |
+| **FR-ETL-01…05** | Сбор данных и DQ | Запланировано | `ID24_EGF-13`, `ID24_EGF-14` | — | — |
+| **NFR-PERF-01** | Производительность | Запланировано | `ID24_EGF-10` | — | — |
+| **ASR-03** | Партиционирование | Запланировано | `ID24_EGF-15` | — | — |
 
 ---
 
@@ -527,6 +531,7 @@ sequenceDiagram
 | **v0.2** | 22.09.2026 | Команда «Шпингалеты» | Согласовано | Формализация каталога данных, построение контекста C4 и процессов AS-IS / TO-BE (Семинар 3). |
 | **v1.0** | 27.09.2026 | Команда «Шпингалеты» | **Утверждено** | **Итоговый релиз Семинара 4:**<br>1. Сформированы 6 сквозных Use Cases и User Stories.<br>2. Разработана спецификация из 18 FR (FR-API-01…FR-UI-03) с однозначными ID.<br>3. Определены измеримые метрики NFR (производительность p95 < 200 мс, RTO < 30 с, Zero Outbound Leaks).<br>4. Зафиксированы Data Requirements для всех 7 таблиц с регламентом DQ.<br>5. Составлены BDD-сценарии приёмки Given/When/Then.<br>6. Сформирована MoSCoW-приоритизация и выделены 4 ключевых ASR.<br>7. Настроен процесс управления изменениями и матрица трассируемости в «Сфере». |
 | **v1.0.1** | 01.10.2026 | Команда «Шпингалеты» | **Утверждено** | **PATCH (уточнения без изменения логики):**<br>1. Требованиям к данным присвоены ID DR-01…DR-07.<br>2. Приоритет MoSCoW присвоен всем 38 требованиям (FR, NFR, DR).<br>3. Матрица трассируемости приведена к фактическому состоянию репозитория.<br>4. Согласованы проверка дедлайна (UC-01 ↔ FR-API-02), текст ошибки 422 и предупреждения Fallback, код энергозоны `DE-LU`.<br>5. Удалены формулировки без метрик в ASR-03. |
+| **v1.1.0** | 07.10.2026 | Богдан Леонов | **На согласовании** | **MINOR (обратно совместимое расширение):**<br>1. Определена базовая стоимость `baseline_cost_eur` (`FR-API-03`); в `FR-API-01` добавлены опциональные параметры `preferred_datacenter_id` и `baseline_start` с валидацией; `FR-UI-03` ссылается на это определение; в схему добавлены `jobs.preferred_datacenter_id`, `jobs.baseline_start`, `recommendations.baseline_cost` (`DR-06`, ER-диаграмма); в сценарий 1 добавлена проверка `baseline_cost_eur`.<br>2. Из US-01 удалена неподтвержденная оценка «до 50%».<br>3. Матрица трассируемости приведена к бэклогу семинара 2: несуществующие `ID24_EGF-21`, `ID24_EGF-25` и неверные привязки заменены на эпики `EGF-10`, `EGF-11`, `EGF-13`, фичи `EGF-14`, `EGF-15`.<br>4. Согласовано с семинаром 3: описание PUE в глоссарии и правило `BR-05` (медиана) приведены к `FR-ENG-01` и `FR-ENG-05`. |
 
 ---
 
