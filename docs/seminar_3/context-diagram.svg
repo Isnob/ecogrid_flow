@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1260 900" width="1260" height="900" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <title>Контекстная диаграмма EcoGrid Flow (C4, уровень 1)</title>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1d3b5c"/>
+    </marker>
+    <marker id="arrOut" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/>
+    </marker>
+    <marker id="arrGrey" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+
+  <rect width="1260" height="900" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="630" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#111827">EcoGrid Flow — контекстная диаграмма системы</text>
+  <text x="630" y="56" text-anchor="middle" font-size="13" fill="#6b7280">C4, уровень 1: система, её пользователи и внешние системы</text>
+
+  <!-- ===== Zones ===== -->
+  <!-- Corporate VPC -->
+  <rect x="15" y="75" width="930" height="715" rx="14" fill="#f8fafc" stroke="#475569" stroke-width="2" stroke-dasharray="10 6"/>
+  <text x="32" y="100" font-size="14" font-weight="700" fill="#334155">КОРПОРАТИВНЫЙ КОНТУР КЛИЕНТА (On-Premise VPC)</text>
+  <text x="32" y="118" font-size="12" fill="#64748b">Данные о задачах, серверах и топологии не покидают этот периметр</text>
+
+  <!-- Internet -->
+  <rect x="985" y="75" width="260" height="715" rx="14" fill="#fffaf2" stroke="#c2410c" stroke-width="2" stroke-dasharray="10 6"/>
+  <text x="1115" y="100" text-anchor="middle" font-size="14" font-weight="700" fill="#9a3412">ПУБЛИЧНЫЙ ИНТЕРНЕТ</text>
+  <text x="1115" y="118" text-anchor="middle" font-size="12" fill="#9a3412">открытые данные, без метаданных клиента</text>
+
+  <!-- ===== Central system ===== -->
+  <rect x="420" y="140" width="340" height="400" rx="16" fill="#1f5fa8" stroke="#143f73" stroke-width="2.5"/>
+  <text x="590" y="182" text-anchor="middle" font-size="24" font-weight="700" fill="#ffffff">EcoGrid Flow</text>
+  <text x="590" y="206" text-anchor="middle" font-size="13" fill="#dbeafe">[Программная система]</text>
+  <text x="590" y="236" text-anchor="middle" font-size="14" fill="#ffffff">On-Premise сервис оптимизации</text>
+  <text x="590" y="256" text-anchor="middle" font-size="14" fill="#ffffff">времени и места запуска вычислений</text>
+  <line x1="450" y1="278" x2="730" y2="278" stroke="#7fb0e6" stroke-width="1"/>
+  <g font-size="14" fill="#ffffff">
+    <text x="452" y="308">•  Сбор и проверка цен и погоды</text>
+    <text x="452" y="336">•  Расчёт динамического PUE</text>
+    <text x="452" y="364">•  Окно старта под SLA-дедлайн</text>
+    <text x="452" y="392">•  Выбор ЦОД (Geo-Arbitrage)</text>
+    <text x="452" y="420">•  REST API для оркестраторов</text>
+    <text x="452" y="448">•  Web-портал: симулятор и отчёты</text>
+  </g>
+  <line x1="450" y1="470" x2="730" y2="470" stroke="#7fb0e6" stroke-width="1"/>
+  <text x="590" y="498" text-anchor="middle" font-size="12" fill="#bfdbfe">Docker Compose · FastAPI · PostgreSQL 16 · React</text>
+  <text x="590" y="518" text-anchor="middle" font-size="12" fill="#bfdbfe">Только рекомендации: серверами не управляет</text>
+
+  <!-- ===== People (left) ===== -->
+  <g id="p-ml">
+    <rect x="30" y="150" width="210" height="96" rx="12" fill="#e8f1fb" stroke="#2f6db5" stroke-width="1.8"/>
+    <circle cx="52" cy="176" r="7" fill="#2f6db5"/><path d="M40,198 q12,-16 24,0 z" fill="#2f6db5"/>
+    <text x="72" y="178" font-size="14" font-weight="700" fill="#14325c">ML-инженер</text>
+    <text x="72" y="196" font-size="12" fill="#334155">Data Scientist</text>
+    <text x="44" y="224" font-size="12" fill="#334155">Оценивает стоимость задач</text>
+    <text x="44" y="239" font-size="12" fill="#334155">в веб-симуляторе</text>
+  </g>
+  <g id="p-fin">
+    <rect x="30" y="290" width="210" height="96" rx="12" fill="#e8f1fb" stroke="#2f6db5" stroke-width="1.8"/>
+    <circle cx="52" cy="316" r="7" fill="#2f6db5"/><path d="M40,338 q12,-16 24,0 z" fill="#2f6db5"/>
+    <text x="72" y="318" font-size="14" font-weight="700" fill="#14325c">FinOps / ESG</text>
+    <text x="72" y="336" font-size="12" fill="#334155">CFO, руководство</text>
+    <text x="44" y="364" font-size="12" fill="#334155">Контролирует экономию</text>
+    <text x="44" y="379" font-size="12" fill="#334155">в € и сокращение CO₂</text>
+  </g>
+  <g id="p-ops">
+    <rect x="30" y="430" width="210" height="96" rx="12" fill="#e8f1fb" stroke="#2f6db5" stroke-width="1.8"/>
+    <circle cx="52" cy="456" r="7" fill="#2f6db5"/><path d="M40,478 q12,-16 24,0 z" fill="#2f6db5"/>
+    <text x="72" y="458" font-size="14" font-weight="700" fill="#14325c">DevOps / Infra</text>
+    <text x="72" y="476" font-size="12" fill="#334155">Администратор</text>
+    <text x="44" y="504" font-size="12" fill="#334155">Ведёт реестр ЦОД,</text>
+    <text x="44" y="519" font-size="12" fill="#334155">развёртывает и мониторит сервис</text>
+  </g>
+
+  <!-- people -> system -->
+  <g stroke="#1d3b5c" stroke-width="2" fill="none" marker-end="url(#arr)">
+    <line x1="240" y1="198" x2="418" y2="198"/>
+    <line x1="240" y1="338" x2="418" y2="338"/>
+    <line x1="240" y1="478" x2="418" y2="478"/>
+  </g>
+  <g font-size="12" fill="#1d3b5c" text-anchor="middle">
+    <text x="329" y="176" font-weight="700">UC-02 · симуляция задач</text>
+    <text x="329" y="192">HTTPS</text>
+    <text x="329" y="316" font-weight="700">UC-03 · дашборд, отчёты</text>
+    <text x="329" y="332">HTTPS</text>
+    <text x="329" y="456" font-weight="700">UC-06 · реестр ЦОД</text>
+    <text x="329" y="472">Admin API, HTTPS</text>
+  </g>
+
+  <!-- ===== Bottom row ===== -->
+  <!-- DataOps -->
+  <rect x="30" y="640" width="210" height="96" rx="12" fill="#e8f1fb" stroke="#2f6db5" stroke-width="1.8"/>
+  <circle cx="52" cy="666" r="7" fill="#2f6db5"/><path d="M40,688 q12,-16 24,0 z" fill="#2f6db5"/>
+  <text x="72" y="668" font-size="14" font-weight="700" fill="#14325c">DataOps</text>
+  <text x="72" y="686" font-size="12" fill="#334155">Data Engineer</text>
+  <text x="44" y="714" font-size="12" fill="#334155">Настраивает пайплайны,</text>
+  <text x="44" y="729" font-size="12" fill="#334155">дедлайны и SLA</text>
+
+  <!-- Airflow -->
+  <rect x="420" y="640" width="220" height="96" rx="12" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.8"/>
+  <text x="530" y="672" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2937">Оркестратор клиента</text>
+  <text x="530" y="692" text-anchor="middle" font-size="12" fill="#4b5563">[Внешняя система]</text>
+  <text x="530" y="712" text-anchor="middle" font-size="12" fill="#4b5563">Airflow / Slurm</text>
+
+  <!-- DC -->
+  <rect x="760" y="640" width="170" height="96" rx="12" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.8"/>
+  <text x="845" y="672" text-anchor="middle" font-size="14" font-weight="700" fill="#1f2937">ЦОД клиента</text>
+  <text x="845" y="692" text-anchor="middle" font-size="12" fill="#4b5563">[Внешняя система]</text>
+  <text x="845" y="712" text-anchor="middle" font-size="12" fill="#4b5563">DE · FI · SE · UK</text>
+
+  <!-- DataOps -> Airflow -->
+  <line x1="240" y1="688" x2="418" y2="688" stroke="#6b7280" stroke-width="2" marker-end="url(#arrGrey)"/>
+  <text x="329" y="672" text-anchor="middle" font-size="12" font-weight="700" fill="#4b5563">DAG, дедлайн, SLA</text>
+
+  <!-- Airflow <-> EcoGrid -->
+  <line x1="530" y1="638" x2="530" y2="542" stroke="#1d3b5c" stroke-width="2.5" marker-start="url(#arr)" marker-end="url(#arr)"/>
+  <text x="548" y="580" font-size="12" font-weight="700" fill="#1d3b5c">UC-01 · POST /api/v1/recommendations</text>
+  <text x="548" y="596" font-size="12" fill="#1d3b5c">запрос: длительность, мощность, дедлайн, зоны</text>
+  <text x="548" y="612" font-size="12" fill="#1d3b5c">ответ: время старта и ЦОД · REST/JSON · Bearer-токен</text>
+
+  <!-- Airflow -> DC -->
+  <line x1="640" y1="688" x2="758" y2="688" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrGrey)"/>
+  <text x="699" y="672" text-anchor="middle" font-size="12" font-weight="700" fill="#4b5563">запуск задачи</text>
+  <text x="699" y="710" text-anchor="middle" font-size="12" fill="#4b5563">SSH / K8s API</text>
+
+  <!-- ===== External systems (right) ===== -->
+  <rect x="1005" y="150" width="220" height="110" rx="12" fill="#fff3e0" stroke="#c2410c" stroke-width="1.8"/>
+  <text x="1115" y="182" text-anchor="middle" font-size="14" font-weight="700" fill="#7c2d12">ENTSO-E Transparency</text>
+  <text x="1115" y="202" text-anchor="middle" font-size="12" fill="#9a3412">[Внешняя система]</text>
+  <text x="1115" y="226" text-anchor="middle" font-size="12" fill="#7c2d12">Цены Day-Ahead и</text>
+  <text x="1115" y="242" text-anchor="middle" font-size="12" fill="#7c2d12">структура генерации</text>
+
+  <rect x="1005" y="340" width="220" height="110" rx="12" fill="#fff3e0" stroke="#c2410c" stroke-width="1.8"/>
+  <text x="1115" y="372" text-anchor="middle" font-size="14" font-weight="700" fill="#7c2d12">Open-Meteo API</text>
+  <text x="1115" y="392" text-anchor="middle" font-size="12" fill="#9a3412">[Внешняя система]</text>
+  <text x="1115" y="416" text-anchor="middle" font-size="12" fill="#7c2d12">Прогноз и архив погоды</text>
+  <text x="1115" y="432" text-anchor="middle" font-size="12" fill="#7c2d12">по координатам ЦОД</text>
+
+  <!-- system -> externals -->
+  <g stroke="#c2410c" stroke-width="2.2" fill="none" marker-end="url(#arrOut)">
+    <line x1="760" y1="205" x2="1003" y2="205"/>
+    <line x1="760" y1="395" x2="1003" y2="395"/>
+  </g>
+  <g font-size="12" fill="#9a3412" text-anchor="middle">
+    <text x="852" y="170" font-weight="700">UC-04 · 1 раз в сутки,</text>
+    <text x="852" y="186" font-weight="700">13:00–14:00 CET</text>
+    <text x="852" y="226">GET, HTTPS/XML</text>
+    <text x="852" y="242">токен ENTSO-E</text>
+    <text x="852" y="360" font-weight="700">UC-04 · каждые 3 ч,</text>
+    <text x="852" y="376" font-weight="700">горизонт 48 ч</text>
+    <text x="852" y="416">GET, HTTPS/JSON</text>
+  </g>
+
+  <!-- egress filter pills on the boundary -->
+  <g>
+    <rect x="945" y="283" width="40" height="36" rx="0" fill="none"/>
+    <rect x="780" y="268" width="200" height="50" rx="8" fill="#fff7ed" stroke="#c2410c" stroke-width="1.2"/>
+    <text x="880" y="288" text-anchor="middle" font-size="12" font-weight="700" fill="#9a3412">Egress-фильтр (NFR-SEC-02)</text>
+    <text x="880" y="304" text-anchor="middle" font-size="12" fill="#9a3412">только 443 · белый список FQDN</text>
+  </g>
+
+  <!-- ===== Legend ===== -->
+  <g transform="translate(15,815)">
+    <rect x="0" y="0" width="1230" height="70" rx="10" fill="#ffffff" stroke="#d1d5db"/>
+    <text x="16" y="24" font-size="13" font-weight="700" fill="#111827">Обозначения</text>
+
+    <rect x="16" y="38" width="24" height="16" rx="4" fill="#1f5fa8"/>
+    <text x="48" y="51" font-size="12" fill="#374151">Разрабатываемая система</text>
+
+    <rect x="228" y="38" width="24" height="16" rx="4" fill="#e8f1fb" stroke="#2f6db5"/>
+    <text x="260" y="51" font-size="12" fill="#374151">Пользователь</text>
+
+    <rect x="368" y="38" width="24" height="16" rx="4" fill="#f3f4f6" stroke="#6b7280"/>
+    <text x="400" y="51" font-size="12" fill="#374151">Система клиента (вне scope)</text>
+
+    <rect x="590" y="38" width="24" height="16" rx="4" fill="#fff3e0" stroke="#c2410c"/>
+    <text x="622" y="51" font-size="12" fill="#374151">Публичный сервис</text>
+
+    <line x1="760" y1="46" x2="800" y2="46" stroke="#1d3b5c" stroke-width="2.2" marker-end="url(#arr)"/>
+    <text x="808" y="51" font-size="12" fill="#374151">Взаимодействие с EcoGrid</text>
+
+    <line x1="990" y1="46" x2="1030" y2="46" stroke="#6b7280" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arrGrey)"/>
+    <text x="1038" y="51" font-size="12" fill="#374151">Без участия EcoGrid</text>
+
+    <text x="1214" y="24" text-anchor="end" font-size="11" fill="#6b7280">UC-xx — сценарии из семинара 4</text>
+  </g>
+</svg>
