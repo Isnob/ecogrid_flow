@@ -49,9 +49,13 @@
 
 ## 📁 Структура репозитория и документация
 
-* **[seminar_1/README.md](file:///Users/bogdanleonov/FU/program%20eng/ecogrid_repo/seminar_1/README.md)** — **Материалы Семинара 1:** официальный Паспорт проекта, матрица ролей, жизненный цикл данных и сценарий защиты.
-* **[znaniya.md](file:///Users/bogdanleonov/FU/program%20eng/ecogrid_repo/znaniya.md)** — Полное техническое описание архитектуры, каталог из 7 источников данных, слои хранилища и схемы Data Flow.
-* **[znaniya.docx](file:///Users/bogdanleonov/FU/program%20eng/ecogrid_repo/znaniya.docx)** — Сверстанный документ архитектуры в формате Word со схемами, диаграммами и альбомным каталогом источников.
+* **[docs/seminar_1/README.md](docs/seminar_1/README.md)** — Семинар 1: паспорт проекта, роли, границы MVP.
+* **[docs/seminar_2/README.md](docs/seminar_2/README.md)** — Семинар 2: Kanban-процесс, бэклог, Definition of Done.
+* **[docs/seminar_3/README.md](docs/seminar_3/README.md)** — Семинар 3: стейкхолдеры, глоссарий, AS-IS / TO-BE, контекстная диаграмма.
+* **[docs/seminar_4/readme.md](docs/seminar_4/readme.md)** — Семинар 4: требования v1.0.1 (FR / NFR / DR), критерии приемки, ASR.
+* **[docs/seminar_5/README.md](docs/seminar_5/README.md)** — Семинар 5: устав проекта, WBS, дорожная карта, RACI.
+* **[docs/data ingestion/](docs/data%20ingestion/)** — каталог источников данных и описание полей таблиц.
+* **[docs/status/](docs/status/)** — еженедельные статус-отчеты проекта.
 
 ---
 
