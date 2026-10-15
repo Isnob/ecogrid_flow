@@ -54,6 +54,7 @@
 * **[docs/seminar_3/README.md](docs/seminar_3/README.md)** — Семинар 3: стейкхолдеры, глоссарий, AS-IS / TO-BE, контекстная диаграмма.
 * **[docs/seminar_4/readme.md](docs/seminar_4/readme.md)** — Семинар 4: требования v1.1.0 (FR / NFR / DR), критерии приемки, ASR.
 * **[docs/seminar_5/README.md](docs/seminar_5/README.md)** — Семинар 5: устав проекта, WBS, дорожная карта, RACI.
+* **[docs/seminar_6/README.md](docs/seminar_6/README.md)** — Семинар 6: реестр рисков, матрица, план реагирования, задачи по снижению рисков.
 * **[docs/data ingestion/](docs/data%20ingestion/)** — каталог источников данных и описание полей таблиц.
 * **[docs/status/](docs/status/)** — еженедельные статус-отчеты проекта.
 
