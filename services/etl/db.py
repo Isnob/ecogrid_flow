@@ -1,0 +1,76 @@
+"""
+Модуль для работы с PostgreSQL: управление подключениями и сохранение данных ETL-пайплайнов.
+"""
+
+import os
+from typing import List, Tuple
+import psycopg
+
+
+def get_connection():
+    """
+    Создаёт соединение с PostgreSQL.
+    Берёт параметры из переменных окружения.
+    Дефолты — 5432, localhost, ecogrid.
+    """
+    return psycopg.connect(
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        port=int(os.getenv("POSTGRES_PORT", "5432")),
+        dbname=os.getenv("POSTGRES_DB", "ecogrid"),
+        user=os.getenv("POSTGRES_USER", "ecogrid"),
+        password=os.getenv("POSTGRES_PASSWORD", "ecogrid_dev_password"),
+    )
+
+
+def get_active_datacenters(conn) -> List[Tuple[str, float, float]]:
+    """
+    Возвращает список активных площадок: [(datacenter_id, latitude, longitude), ...]
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            "SELECT datacenter_id, latitude, longitude FROM datacenters WHERE is_active = TRUE;"
+        )
+        return cur.fetchall()
+
+
+def save_weather_forecast(conn, datacenter_id: str, records: List[Tuple]) -> int:
+    """
+    Пакетная вставка нормализованного прогноза погоды с обновлением при совпадении ключа (UPSERT).
+    Формат каждого кортежа в records:
+    (forecast_time, temperature_2m, relative_humidity_2m, cloud_cover, wind_speed_10m, shortwave_radiation)
+    """
+    if not records:
+        return 0
+
+    # Формируем строки для вставки, добавляя datacenter_id
+    rows = [
+        (datacenter_id, rec[0], rec[1], rec[2], rec[3], rec[4], rec[5])
+        for rec in records
+    ]
+
+    query = """
+    INSERT INTO open_meteo_forecast (
+        datacenter_id,
+        forecast_time,
+        temperature_2m,
+        relative_humidity_2m,
+        cloud_cover,
+        wind_speed_10m,
+        shortwave_radiation,
+        retrieved_at
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+    ON CONFLICT (datacenter_id, forecast_time)
+    DO UPDATE SET
+        temperature_2m       = EXCLUDED.temperature_2m,
+        relative_humidity_2m = EXCLUDED.relative_humidity_2m,
+        cloud_cover          = EXCLUDED.cloud_cover,
+        wind_speed_10m       = EXCLUDED.wind_speed_10m,
+        shortwave_radiation  = EXCLUDED.shortwave_radiation,
+        retrieved_at         = NOW();
+    """
+
+    with conn.cursor() as cur:
+        cur.executemany(query, rows)
+    conn.commit()
+
+    return len(rows)

@@ -15,7 +15,13 @@ __pycache__/
 env/
 venv/
 
-# IDE
+# IDE and Tools
 .idea/
 .vscode/
 *.swp
+.postman/
+postman/
+
+# Environment variables
+.env
+.env.local

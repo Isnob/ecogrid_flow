@@ -9,12 +9,28 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
+    restart: unless-stopped
+
+  etl-worker:
+    build:
+      context: ./services/etl
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-ecogrid}
+      POSTGRES_USER: ${POSTGRES_USER:-ecogrid}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ecogrid_dev_password}
+      WEATHER_INTERVAL_HOURS: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
