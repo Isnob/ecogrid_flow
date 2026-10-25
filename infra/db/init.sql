@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS recommendations (
     estimated_cost          NUMERIC(12, 4) NOT NULL,
     baseline_cost           NUMERIC(12, 4) NOT NULL,
     estimated_savings       NUMERIC(12, 4) NOT NULL,
-    currency                VARCHAR(10) NOT NULL DEFAULT 'EUR',
+    currency                VARCHAR(3) NOT NULL DEFAULT 'EUR',
     is_fallback             BOOLEAN NOT NULL DEFAULT FALSE,
     calculated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -94,7 +94,56 @@ CREATE TABLE IF NOT EXISTS recommendations (
 CREATE INDEX IF NOT EXISTS idx_recommendations_job_id 
     ON recommendations (job_id);
 
-CREATE INDEX IF NOT EXISTS idx_recommendations_calculated_at 
+CREATE INDEX IF NOT EXISTS idx_recommendations_calculated_at
     ON recommendations (calculated_at);
+
+
+-- 6. Цены Day-Ahead ENTSO-E (сырые интервалы в исходном шаге PT60M / PT15M, время в UTC)
+CREATE TABLE IF NOT EXISTS entsoe_day_ahead_prices (
+    bidding_zone            VARCHAR(10) NOT NULL,
+    period_start            TIMESTAMPTZ NOT NULL,
+    period_end              TIMESTAMPTZ NOT NULL,
+    resolution              VARCHAR(10) NOT NULL,
+    price                   NUMERIC(8, 2) NOT NULL,
+    currency                VARCHAR(3) NOT NULL DEFAULT 'EUR',
+    price_unit              VARCHAR(10) NOT NULL DEFAULT 'MWH',
+    retrieved_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (bidding_zone, period_start, resolution)
+);
+
+-- Индекс по времени для выборок окна расчёта по всем зонам
+CREATE INDEX IF NOT EXISTS idx_entsoe_prices_period_start
+    ON entsoe_day_ahead_prices (period_start);
+
+
+-- 7. Почасовые цены для расчётного ядра.
+-- 15-минутные интервалы усредняются до часа; если за час есть и PT60M, и PT15M, берётся PT60M.
+-- points_count показывает, из скольких интервалов собран час (неполный час: < 4 при PT15M).
+CREATE OR REPLACE VIEW v_entsoe_prices_hourly AS
+SELECT
+    bidding_zone,
+    hour_start,
+    price,
+    currency,
+    price_unit,
+    source_resolution,
+    points_count
+FROM (
+    SELECT
+        bidding_zone,
+        date_trunc('hour', period_start, 'UTC')   AS hour_start,
+        ROUND(AVG(price), 2)                      AS price,
+        MIN(currency)                             AS currency,
+        MIN(price_unit)                           AS price_unit,
+        resolution                                AS source_resolution,
+        COUNT(*)                                  AS points_count,
+        ROW_NUMBER() OVER (
+            PARTITION BY bidding_zone, date_trunc('hour', period_start, 'UTC')
+            ORDER BY CASE resolution WHEN 'PT60M' THEN 1 ELSE 2 END
+        )                                         AS resolution_rank
+    FROM entsoe_day_ahead_prices
+    GROUP BY bidding_zone, date_trunc('hour', period_start, 'UTC'), resolution
+) ranked
+WHERE resolution_rank = 1;
 
 

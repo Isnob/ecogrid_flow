@@ -164,8 +164,8 @@ ecogrid_repo/
 | **Время** | Только UTC. В базе — `timestamptz`, в JSON — ISO 8601 с `Z` (`2026-11-10T02:00:00Z`). Местное время и переход на летнее/зимнее время обрабатываются только в `ecogrid_common` (снижает RISK-11) |
 | **Интервалы** | Полуоткрытые: `[period_start; period_end)`. Шаг цены — `PT15M` или `PT60M`, хранится в поле `resolution` |
 | **Энергозоны** | Только коды ENTSO-E: `DE-LU`, `FI`, `SE3` |
-| **Деньги и цены** | Цена — `numeric(8,2)` в EUR/MWh, стоимость задачи — `numeric(12,2)` в EUR. Не `float` |
-| **Идентификаторы** | `job_id` — строка от клиента; `recommendation_id` — UUID; `datacenter_id` — строка вида `FI-HELSINKI-01` |
+| **Деньги и цены** | Цена — `numeric(8,2)` в EUR/MWh, стоимость задачи — `numeric(12,4)` в EUR, валюта — код ISO 4217 (`varchar(3)`). Не `float` |
+| **Идентификаторы** | `job_id` — строка от клиента; `recommendation_id` — целое число (`bigserial`); `datacenter_id` — строка вида `FI-HELSINKI-01` |
 | **Имена полей** | `snake_case`, на английском, единица измерения в суффиксе: `_kw`, `_eur`, `_minutes`, `_percent` |
 | **Запись** | Идемпотентная: `INSERT … ON CONFLICT … DO UPDATE` (`FR-ETL-05`) |
 
@@ -175,17 +175,20 @@ ecogrid_repo/
 
 | Поле | Тип | Обязательно | Правило |
 | :--- | :--- | :---: | :--- |
-| `bidding_zone` | `text` | да | Одно из `DE-LU`, `FI`, `SE3` |
+| `bidding_zone` | `varchar(10)` | да | Одно из `DE-LU`, `FI`, `SE3` |
 | `period_start` | `timestamptz` | да | UTC, начало интервала |
 | `period_end` | `timestamptz` | да | `period_start` + шаг |
 | `price` | `numeric(8,2)` | да | От −500.00 до 4000.00 (DQ Gate) |
-| `currency` | `text` | да | `EUR` |
-| `price_unit` | `text` | да | `MWh` |
-| `resolution` | `text` | да | `PT15M` или `PT60M` |
+| `currency` | `varchar(3)` | да | `EUR` (ISO 4217) |
+| `price_unit` | `varchar(10)` | да | `MWH` |
+| `resolution` | `varchar(10)` | да | `PT15M` или `PT60M` |
+| `retrieved_at` | `timestamptz` | да | Время загрузки в БД |
+
+Ядро читает не саму таблицу, а представление `v_entsoe_prices_hourly` — почасовой ряд: 15-минутные цены усредняются до часа, при наличии обоих шагов берется `PT60M`. Схема — в [ER-диаграмме](../database/ERD.md).
 
 Гарантия поставщика: в таблицу попадают только партии, прошедшие DQ Gate; за сутки — 24 значения при `PT60M` или 96 при `PT15M`; цены на завтра появляются до 14:30 CET.
 
-**CT-02. Погода** (`open_meteo_forecast`). Ключ — (`datacenter_id`, `forecast_time`, `retrieved_at`). Поля: `datacenter_id` (`text`, ссылка на `datacenters`), `forecast_time` (`timestamptz`, шаг 1 ч), `temperature_2m` (`numeric(5,2)`, °C), `relative_humidity_2m`, `cloud_cover`, `wind_speed_10m`, `shortwave_radiation`, `retrieved_at` (`timestamptz`). Потребитель берет для каждого часа прогноз с самым поздним `retrieved_at`.
+**CT-02. Погода** (`open_meteo_forecast`). Ключ — (`datacenter_id`, `forecast_time`). Поля: `datacenter_id` (`varchar(50)`, ссылка на `datacenters`), `forecast_time` (`timestamptz`, шаг 1 ч), `temperature_2m` (`numeric(5,2)`, °C), `relative_humidity_2m`, `cloud_cover`, `wind_speed_10m`, `shortwave_radiation`, `retrieved_at` (`timestamptz`). Повторная загрузка перезаписывает прогноз на тот же час (`ON CONFLICT … DO UPDATE`), поэтому в таблице всегда самый свежий прогноз, а `retrieved_at` показывает, когда он получен.
 
 **CT-03. Реестр ЦОД** (`datacenters`): `datacenter_id`, `name`, `bidding_zone`, `latitude`, `longitude`, `max_power_kw`, `base_pue`, `is_active`, `created_at`. Ядро учитывает только ЦОД с `is_active = true`.
 
@@ -207,7 +210,7 @@ def recommend(job: JobSpec, now: datetime) -> Recommendation:
 
 ```json
 {
-  "recommendation_id": "5d0e3c1e-2f0b-4c63-9d1a-3a8f1c2b7e10",
+  "recommendation_id": 1042,
   "job_id": "job-spark-agg-771",
   "target_datacenter": "FI-HELSINKI-01",
   "recommended_start": "2026-11-10T02:00:00Z",

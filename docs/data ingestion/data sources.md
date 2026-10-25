@@ -40,8 +40,8 @@
 
 1. `entsoe_day_ahead_prices` — цена по энергозоне и временному интервалу: `bidding_zone`, `period_start`, `period_end`, `price`, `currency`, `price_unit`, `resolution`.
 2. `entsoe_day_ahead_generation` — генерация по типам источников: `bidding_zone`, `period_start`, `period_end`, `production_type`, `generation_mw`, `resolution`.
-3. `open_meteo_forecast` — прогноз около ЦОД: координаты, время прогноза, температура, влажность, ветер и радиация.
-4. `open_meteo_historical_weather` — исторические метеоданные: координаты, `observed_at`, температура, влажность, облачность, ветер и радиация.
+3. `open_meteo_forecast` — прогноз около ЦОД: `datacenter_id`, `forecast_time`, температура, влажность, облачность, ветер и радиация.
+4. `open_meteo_historical_weather` — исторические метеоданные: `datacenter_id`, `observed_at`, температура, влажность, облачность, ветер и радиация.
 5. `datacenters` — справочник инфраструктуры и связь ЦОД с энергозоной.
 6. `jobs` — параметры вычислительных задач.
 7. `recommendations` — результаты расчётов и история рекомендаций.
@@ -50,26 +50,28 @@
 
 ### Описание таблиц и полей
 
+Типы и ключи совпадают с [`infra/db/init.sql`](../../infra/db/init.sql); общая схема связей — в [ER-диаграмме](../database/ERD.md).
+
 #### Таблица `entsoe_day_ahead_prices`
 
-Таблица предназначена для хранения исторических цен на электроэнергию по энергозонам и временным интервалам.
+Таблица предназначена для хранения цен Day-Ahead по энергозонам и временным интервалам в исходном шаге источника. Первичный ключ — (`bidding_zone`, `period_start`, `resolution`).
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `id` | BIGSERIAL | Уникальный идентификатор записи |
-| `bidding_zone` | VARCHAR(100) | Энергозона или ценовая зона |
-| `period_start` | TIMESTAMP WITH TIME ZONE | Начало периода действия цены |
-| `period_end` | TIMESTAMP WITH TIME ZONE | Конец периода действия цены |
-| `price` | NUMERIC(12,4) | Стоимость электроэнергии |
-| `currency` | VARCHAR(10) | Валюта стоимости, например EUR |
-| `price_unit` | VARCHAR(30) | Единица измерения, например EUR/MWh |
-| `resolution` | VARCHAR(20) | Разрешение данных: 15 минут, 30 минут или 1 час |
-| `source` | VARCHAR(100) | Название источника данных |
-| `loaded_at` | TIMESTAMP WITH TIME ZONE | Время загрузки записи в БД |
+| `bidding_zone` | VARCHAR(10) | Энергозона ENTSO-E: `DE-LU`, `FI`, `SE3` (PK) |
+| `period_start` | TIMESTAMP WITH TIME ZONE | Начало периода действия цены, UTC (PK) |
+| `period_end` | TIMESTAMP WITH TIME ZONE | Конец периода действия цены, UTC |
+| `resolution` | VARCHAR(10) | Шаг временного ряда: `PT60M` или `PT15M` (PK) |
+| `price` | NUMERIC(8,2) | Цена электроэнергии |
+| `currency` | VARCHAR(3) | Валюта цены, код ISO 4217 (по умолчанию `EUR`) |
+| `price_unit` | VARCHAR(10) | За какой объём энергии указана цена (по умолчанию `MWH`) |
+| `retrieved_at` | TIMESTAMP WITH TIME ZONE | Время загрузки записи в БД |
 
-Для анализа необходимо создать индекс по полям `bidding_zone` и `period_start`.
+Создан индекс по полю `period_start`. Почасовой ряд для расчётного ядра отдаёт представление `v_entsoe_prices_hourly`: 15-минутные цены усредняются до часа, при наличии обоих шагов берётся `PT60M`.
 
 #### Таблица `entsoe_day_ahead_generation`
+
+> Таблица запланирована (`DR-02`), в `infra/db/init.sql` пока не создана; поля ниже — проект.
 
 Таблица предназначена для хранения исторических данных о выработке электроэнергии по типам источников.
 
@@ -89,22 +91,20 @@
 
 #### Таблица `open_meteo_forecast`
 
-Таблица хранит прогнозные погодные данные, которые используются для расчёта ожидаемой стоимости работы ЦОД.
+Таблица хранит прогнозные погодные данные, которые используются для расчёта ожидаемой стоимости работы ЦОД. Первичный ключ — (`datacenter_id`, `forecast_time`): повторная загрузка перезаписывает прогноз на тот же час, поэтому в таблице всегда последний прогноз.
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `id` | BIGSERIAL | Уникальный идентификатор записи |
-| `datacenter_id` | BIGINT | Идентификатор дата-центра |
-| `latitude` | NUMERIC(9,6) | Географическая широта |
-| `longitude` | NUMERIC(9,6) | Географическая долгота |
-| `forecast_at` | TIMESTAMP WITH TIME ZONE | Время, на которое построен прогноз |
-| `temperature_2m` | NUMERIC(6,2) | Температура воздуха на высоте 2 м |
-| `relative_humidity_2m` | NUMERIC(6,2) | Относительная влажность |
-| `wind_speed_10m` | NUMERIC(8,2) | Скорость ветра на высоте 10 м |
-| `cloud_cover` | NUMERIC(6,2) | Облачность в процентах |
-| `shortwave_radiation` | NUMERIC(10,2) | Коротковолновая солнечная радиация |
-| `source` | VARCHAR(100) | Название источника данных |
-| `loaded_at` | TIMESTAMP WITH TIME ZONE | Время загрузки прогноза |
+| `datacenter_id` | VARCHAR(50) | Идентификатор дата-центра (PK, FK к datacenters); координаты берутся из `datacenters` |
+| `forecast_time` | TIMESTAMP WITH TIME ZONE | Время, на которое построен прогноз, UTC (PK) |
+| `temperature_2m` | NUMERIC(5,2) | Температура воздуха на высоте 2 м (°C) |
+| `relative_humidity_2m` | NUMERIC(5,2) | Относительная влажность (%) |
+| `cloud_cover` | NUMERIC(5,2) | Облачность в процентах (%) |
+| `wind_speed_10m` | NUMERIC(5,2) | Скорость ветра на высоте 10 м (км/ч) |
+| `shortwave_radiation` | NUMERIC(7,2) | Коротковолновая солнечная радиация (Вт/м²) |
+| `retrieved_at` | TIMESTAMP WITH TIME ZONE | Время загрузки прогноза в БД |
+
+Создан индекс по полю `forecast_time`.
 
 #### Таблица `open_meteo_historical_weather`
 
@@ -171,7 +171,7 @@
 | `estimated_cost` | NUMERIC(12,4) | Ожидаемая стоимость выполнения в выбранном окне (€) |
 | `baseline_cost` | NUMERIC(12,4) | Базовая стоимость выполнения (AS-IS) в preferred ЦОД (€) |
 | `estimated_savings` | NUMERIC(12,4) | Расчётная экономия (€) относительно базового сценария |
-| `currency` | VARCHAR(10) | Валюта расчёта (EUR) |
+| `currency` | VARCHAR(3) | Валюта расчёта, код ISO 4217 (EUR) |
 | `is_fallback` | BOOLEAN | Признак: true — расчёт по резервной 3-недельной медиане, false — по реальным биржевым ценам |
 | `calculated_at` | TIMESTAMP WITH TIME ZONE | Время формирования рекомендации |
 
@@ -190,13 +190,16 @@
 
 Перед импортом необходимо проверить соответствие единиц измерения, часовых поясов и временного разрешения во всех источниках. Для ENTSO-E цены обычно передаются в EUR/MWh, а данные о генерации — в MW. Перед объединением с погодными данными все временные отметки нужно привести к единой временной зоне.
 
-Исторические данные должны загружаться с сохранением исходного времени наблюдения, названия источника и времени загрузки в БД. Это позволит повторить импорт, проверить качество данных и выявить расхождения между версиями источников.
+Исторические данные должны загружаться с сохранением исходного времени наблюдения и времени загрузки в БД (`retrieved_at`). Источник однозначно определяется таблицей, поэтому отдельное поле `source` не хранится. Это позволит повторить импорт, проверить качество данных и выявить расхождения между версиями источников.
 
 ### Связи между таблицами
 
-Для целостности данных необходимо предусмотреть внешние ключи:
+Внешние ключи (см. [ER-диаграмму](../database/ERD.md)):
 
-- `open_meteo_forecast.datacenter_id` → `datacenters.id`;
-- `open_meteo_historical_weather.datacenter_id` → `datacenters.id`;
-- `recommendations.job_id` → `jobs.id`;
-- `recommendations.datacenter_id` → `datacenters.id`.
+- `open_meteo_forecast.datacenter_id` → `datacenters.datacenter_id`;
+- `open_meteo_historical_weather.datacenter_id` → `datacenters.datacenter_id`;
+- `jobs.preferred_datacenter_id` → `datacenters.datacenter_id`;
+- `recommendations.job_id` → `jobs.job_id`;
+- `recommendations.datacenter_id` → `datacenters.datacenter_id`.
+
+Связь цен с ЦОД — логическая, по полю `bidding_zone`, без внешнего ключа.

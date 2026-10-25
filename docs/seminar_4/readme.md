@@ -127,7 +127,7 @@ graph LR
      * Полноту временного ряда (ровно 24 точки при шаге 60 мин или 96 точек при шаге 15 мин на зону);
      * Допустимый диапазон цен: от -500.00 до +4000.00 EUR/MWh;
      * Валюту (`EUR`) и единицы измерения (`MWh`).
-  5. Очищенные данные пакетом вставляются в партиционированную таблицу `entsoe_day_ahead_prices` методом `ON CONFLICT (bidding_zone, period_start) DO UPDATE`.
+  5. Очищенные данные пакетом вставляются в партиционированную таблицу `entsoe_day_ahead_prices` методом `ON CONFLICT (bidding_zone, period_start, resolution) DO UPDATE`.
   6. В системный лог записывается метрика успешности загрузки.
 * **Альтернативный поток (Ошибка DQ):** При обнаружении пропусков или недопустимых значений воркер делает до 3 повторных попыток (exponential backoff) и генерирует алерт дежурному инженеру.
 
@@ -225,56 +225,99 @@ graph LR
 
 Спецификация фиксирует требования ко всем **7 таблицам системы** в соответствии с каталогом источников данных и описанием схем `PreColumns.md`.
 
+Диаграмма ниже соответствует текущему DDL [`infra/db/init.sql`](../../infra/db/init.sql) (6 таблиц и представление почасовых цен); таблица `entsoe_day_ahead_generation` (`DR-02`) пока не создана. Ключи, связи и план по схеме — в [ER-диаграмме](../database/ERD.md).
+
 ```mermaid
 erDiagram
-    datacenters ||--o{ open_meteo_forecast : "has weather"
-    datacenters ||--o{ open_meteo_historical_weather : "has history"
-    datacenters ||--o{ recommendations : "targets"
-    entsoe_day_ahead_prices ||--o{ recommendations : "prices used"
-    jobs ||--|| recommendations : "calculated for"
+    datacenters ||--o{ open_meteo_forecast : "datacenter_id"
+    datacenters ||--o{ open_meteo_historical_weather : "datacenter_id"
+    datacenters |o--o{ jobs : "preferred_datacenter_id"
+    datacenters ||--o{ recommendations : "datacenter_id"
+    jobs ||--o{ recommendations : "job_id"
+    datacenters }o..o{ entsoe_day_ahead_prices : "bidding_zone (без FK)"
+    entsoe_day_ahead_prices ||..|{ v_entsoe_prices_hourly : "VIEW: усреднение до часа"
 
     datacenters {
-        string datacenter_id PK
-        string name
-        string bidding_zone FK
-        float latitude
-        float longitude
-        float base_pue
-        float max_power_kw
-        boolean is_active
+        varchar datacenter_id PK "VARCHAR(50)"
+        varchar name "VARCHAR(100)"
+        varchar bidding_zone "VARCHAR(10)"
+        numeric latitude "NUMERIC(8,5)"
+        numeric longitude "NUMERIC(8,5)"
+        numeric base_pue "NUMERIC(4,3), default 1.200"
+        numeric max_power_kw "NUMERIC(10,2), default 1000.00"
+        boolean is_active "default TRUE"
+        timestamptz created_at "default NOW()"
     }
 
     entsoe_day_ahead_prices {
-        string bidding_zone PK
-        timestamp period_start PK
-        timestamp period_end
-        float price
-        string currency
-        string resolution
+        varchar bidding_zone PK "VARCHAR(10)"
+        timestamptz period_start PK "UTC"
+        varchar resolution PK "VARCHAR(10): PT60M / PT15M"
+        timestamptz period_end "UTC"
+        numeric price "NUMERIC(8,2)"
+        varchar currency "VARCHAR(3), default EUR"
+        varchar price_unit "VARCHAR(10), default MWH"
+        timestamptz retrieved_at "default NOW()"
+    }
+
+    v_entsoe_prices_hourly {
+        varchar bidding_zone
+        timestamptz hour_start "UTC"
+        numeric price "среднее за час"
+        varchar currency
+        varchar price_unit
+        varchar source_resolution "PT60M приоритетнее PT15M"
+        bigint points_count "число интервалов в часе"
+    }
+
+    open_meteo_forecast {
+        varchar datacenter_id PK,FK "VARCHAR(50)"
+        timestamptz forecast_time PK "UTC"
+        numeric temperature_2m "NUMERIC(5,2), °C"
+        numeric relative_humidity_2m "NUMERIC(5,2), %"
+        numeric cloud_cover "NUMERIC(5,2), %"
+        numeric wind_speed_10m "NUMERIC(5,2), км/ч"
+        numeric shortwave_radiation "NUMERIC(7,2), Вт/м²"
+        timestamptz retrieved_at "default NOW()"
+    }
+
+    open_meteo_historical_weather {
+        varchar datacenter_id PK,FK "VARCHAR(50)"
+        timestamptz observed_at PK "UTC"
+        numeric temperature_2m "NUMERIC(5,2), °C"
+        numeric relative_humidity_2m "NUMERIC(5,2), %"
+        numeric cloud_cover "NUMERIC(5,2), %"
+        numeric wind_speed_10m "NUMERIC(5,2), км/ч"
+        numeric shortwave_radiation "NUMERIC(7,2), Вт/м²"
+        timestamptz retrieved_at "default NOW()"
     }
 
     jobs {
-        string job_id PK
-        string name
-        int duration_minutes
-        float required_power_kw
-        timestamp earliest_start
-        timestamp deadline
-        string preferred_datacenter_id FK
-        timestamp baseline_start
-        boolean allow_geo_migration
+        varchar job_id PK "VARCHAR(100)"
+        varchar name "VARCHAR(150), nullable"
+        integer duration_minutes
+        numeric required_power_kw "NUMERIC(10,2)"
+        timestamptz earliest_start
+        timestamptz deadline
+        varchar preferred_datacenter_id FK "VARCHAR(50), nullable"
+        timestamptz baseline_start "nullable"
+        boolean allow_geo_migration "default TRUE"
+        timestamptz created_at "default NOW()"
     }
 
     recommendations {
-        string recommendation_id PK
-        string job_id FK
-        string datacenter_id FK
-        timestamp recommended_start
-        timestamp recommended_end
-        float estimated_cost
-        float baseline_cost
-        float estimated_savings
-        boolean is_fallback
+        bigserial recommendation_id PK
+        varchar job_id FK "VARCHAR(100)"
+        varchar datacenter_id FK "VARCHAR(50)"
+        timestamptz recommended_start
+        timestamptz recommended_end
+        numeric estimated_energy_kwh "NUMERIC(12,4)"
+        numeric estimated_cost "NUMERIC(12,4), EUR"
+        numeric baseline_cost "NUMERIC(12,4), EUR"
+        numeric estimated_savings "NUMERIC(12,4), EUR"
+        varchar currency "VARCHAR(3), default EUR"
+        boolean is_fallback "default FALSE"
+        timestamptz calculated_at "default NOW()"
     }
 ```
 
@@ -305,7 +348,7 @@ Feature: Расчет оптимального окна запуска вычи�
 
   Scenario: Выбор энергозоны с минимальной ценой и соблюдением SLA
     Given в базе данных доступны спотовые цены на следующие 24 часа:
-      | bidding_zone | period_start         | price_eur_mwh |
+      | bidding_zone | period_start         | price         |
       | DE-LU        | 2026-11-10T02:00:00Z | 145.00        |
       | FI           | 2026-11-10T02:00:00Z | 22.50         |
       | SE3          | 2026-11-10T02:00:00Z | 35.00         |

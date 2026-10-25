@@ -32,7 +32,7 @@ $$\text{Savings} = \text{Baseline Cost} - \text{Estimated Cost}$$
 | **7** | `optimal_slot.cost_eur` | `float` | `112.50` | Ожидаемая стоимость выполнения задачи в оптимуме (€) | `estimated_cost` | `NUMERIC(12, 4)` | `NOT NULL` | `estimated_cost_eur` |
 | **8** | `baseline_slot.cost_eur` | `float` | `145.00` | Базовая стоимость выполнения (AS-IS) в preferred ЦОД (€) | `baseline_cost` | `NUMERIC(12, 4)` | `NOT NULL` | `baseline_cost_eur` |
 | **9** | `savings_eur` | `float` | `32.50` | `baseline_cost - estimated_cost` | `estimated_savings` | `NUMERIC(12, 4)` | `NOT NULL` | `estimated_savings_eur` |
-| **10** | *(Фиксированная валюта)* | `string` | `"EUR"` | Валюта расчёта биржевых цен (ISO 4217) | `currency` | `VARCHAR(10)` | `NOT NULL DEFAULT 'EUR'` | *(контекст)* |
+| **10** | *(Фиксированная валюта)* | `string` | `"EUR"` | Валюта расчёта биржевых цен (ISO 4217) | `currency` | `VARCHAR(3)` | `NOT NULL DEFAULT 'EUR'` | *(контекст)* |
 | **11** | `is_fallback` | `boolean` | `false` | Флаг: `true`, если расчет шел по 3-нед. медиане (сбой котировок) | `is_fallback` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` | `is_fallback` |
 | **12** | *(Системное время)* | `datetime` | `2026-10-25 14:00:02+00` | Время генерации рекомендации: `NOW()` в UTC | `calculated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | *(timestamp)* |
 
