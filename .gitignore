@@ -22,6 +22,12 @@ venv/
 .postman/
 postman/
 
+# Песочница для локальных черновиков
+scratch/
+*.local.sql
+check.sql
+
+
 # Environment variables
 .env
 .env.local

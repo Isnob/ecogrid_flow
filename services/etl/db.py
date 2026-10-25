@@ -74,3 +74,46 @@ def save_weather_forecast(conn, datacenter_id: str, records: List[Tuple]) -> int
     conn.commit()
 
     return len(rows)
+
+
+def save_historical_weather(conn, datacenter_id: str, records: List[Tuple]) -> int:
+    """
+    Пакетная вставка исторического архива погоды с обновлением при совпадении ключа (UPSERT).
+    Формат каждого кортежа в records:
+    (observed_at, temperature_2m, relative_humidity_2m, cloud_cover, wind_speed_10m, shortwave_radiation)
+    """
+    if not records:
+        return 0
+
+    rows = [
+        (datacenter_id, rec[0], rec[1], rec[2], rec[3], rec[4], rec[5])
+        for rec in records
+    ]
+
+    query = """
+    INSERT INTO open_meteo_historical_weather (
+        datacenter_id,
+        observed_at,
+        temperature_2m,
+        relative_humidity_2m,
+        cloud_cover,
+        wind_speed_10m,
+        shortwave_radiation,
+        retrieved_at
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+    ON CONFLICT (datacenter_id, observed_at)
+    DO UPDATE SET
+        temperature_2m       = EXCLUDED.temperature_2m,
+        relative_humidity_2m = EXCLUDED.relative_humidity_2m,
+        cloud_cover          = EXCLUDED.cloud_cover,
+        wind_speed_10m       = EXCLUDED.wind_speed_10m,
+        shortwave_radiation  = EXCLUDED.shortwave_radiation,
+        retrieved_at         = NOW();
+    """
+
+    with conn.cursor() as cur:
+        cur.executemany(query, rows)
+    conn.commit()
+
+    return len(rows)
+

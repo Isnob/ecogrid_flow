@@ -112,21 +112,16 @@
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `id` | BIGSERIAL | Уникальный идентификатор записи |
-| `datacenter_id` | BIGINT | Идентификатор дата-центра |
-| `latitude` | NUMERIC(9,6) | Географическая широта |
-| `longitude` | NUMERIC(9,6) | Географическая долгота |
+| `datacenter_id` | VARCHAR(50) | Идентификатор дата-центра (FK к datacenters) |
 | `observed_at` | TIMESTAMP WITH TIME ZONE | Время наблюдения |
-| `temperature_2m` | NUMERIC(6,2) | Фактическая температура воздуха |
-| `relative_humidity_2m` | NUMERIC(6,2) | Относительная влажность |
-| `cloud_cover` | NUMERIC(6,2) | Облачность в процентах |
-| `wind_speed_10m` | NUMERIC(8,2) | Скорость ветра на высоте 10 м |
-| `shortwave_radiation` | NUMERIC(10,2) | Коротковолновая солнечная радиация |
-| `precipitation` | NUMERIC(8,2) | Количество осадков |
-| `source` | VARCHAR(100) | Название источника данных |
-| `loaded_at` | TIMESTAMP WITH TIME ZONE | Время загрузки записи в БД |
+| `temperature_2m` | NUMERIC(5,2) | Фактическая температура воздуха (°C) |
+| `relative_humidity_2m` | NUMERIC(5,2) | Относительная влажность (%) |
+| `cloud_cover` | NUMERIC(5,2) | Облачность в процентах (%) |
+| `wind_speed_10m` | NUMERIC(5,2) | Скорость ветра на высоте 10 м (км/ч) |
+| `shortwave_radiation` | NUMERIC(7,2) | Коротковолновая солнечная радиация (Вт/м²) |
+| `retrieved_at` | TIMESTAMP WITH TIME ZONE | Время загрузки записи в БД |
 
-Для ускорения EDA рекомендуется создать индекс по полям `datacenter_id` и `observed_at`.
+Для ускорения EDA и бэктестов создан индекс по полю `observed_at`.
 
 #### Таблица `datacenters`
 
@@ -134,17 +129,15 @@
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `id` | BIGSERIAL | Уникальный идентификатор дата-центра |
-| `name` | VARCHAR(150) | Название дата-центра |
-| `latitude` | NUMERIC(9,6) | Географическая широта |
-| `longitude` | NUMERIC(9,6) | Географическая долгота |
-| `bidding_zone` | VARCHAR(100) | Энергозона дата-центра |
-| `installed_power_mw` | NUMERIC(12,4) | Доступная мощность в МВт |
-| `pue` | NUMERIC(6,3) | Коэффициент эффективности использования энергии |
-| `timezone` | VARCHAR(50) | Часовой пояс дата-центра |
+| `datacenter_id` | VARCHAR(50) | Уникальный строковый идентификатор площадки (PK) |
+| `name` | VARCHAR(100) | Название дата-центра |
+| `bidding_zone` | VARCHAR(10) | Энергозона дата-центра (связь с ENTSO-E) |
+| `latitude` | NUMERIC(8,5) | Географическая широта |
+| `longitude` | NUMERIC(8,5) | Географическая долгота |
+| `base_pue` | NUMERIC(4,3) | Базовый PUE дата-центра при фрикулинге |
+| `max_power_kw` | NUMERIC(10,2) | Доступная вычислительная/энергетическая мощность в кВт |
 | `is_active` | BOOLEAN | Признак доступности дата-центра |
-| `created_at` | TIMESTAMP WITH TIME ZONE | Дата создания записи |
-| `updated_at` | TIMESTAMP WITH TIME ZONE | Дата последнего изменения |
+| `created_at` | TIMESTAMP WITH TIME ZONE | Дата регистрации записи |
 
 #### Таблица `jobs`
 
@@ -152,15 +145,16 @@
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `id` | BIGSERIAL | Уникальный идентификатор задачи |
-| `external_id` | VARCHAR(150) | Идентификатор задачи во внешней системе |
-| `requested_at` | TIMESTAMP WITH TIME ZONE | Время поступления запроса |
-| `duration_minutes` | INTEGER | Продолжительность выполнения задачи |
-| `power_mw` | NUMERIC(12,4) | Требуемая мощность |
-| `deadline_at` | TIMESTAMP WITH TIME ZONE | Крайний срок выполнения |
-| `allowed_datacenters` | JSONB | Список допустимых дата-центров |
-| `status` | VARCHAR(30) | Статус задачи |
-| `created_at` | TIMESTAMP WITH TIME ZONE | Дата создания записи |
+| `job_id` | VARCHAR(100) | Уникальный идентификатор задачи (UUID или ID из Airflow/Slurm, PK) |
+| `name` | VARCHAR(150) | Человекочитаемое название задачи для UI |
+| `duration_minutes` | INTEGER | Продолжительность выполнения задачи в минутах |
+| `required_power_kw` | NUMERIC(10,2) | Требуемая электрическая мощность в кВт |
+| `earliest_start` | TIMESTAMP WITH TIME ZONE | Самое раннее допустимое время старта |
+| `deadline` | TIMESTAMP WITH TIME ZONE | Крайний срок завершения вычислений |
+| `preferred_datacenter_id` | VARCHAR(50) | Предпочтительный ЦОД клиента (FK к datacenters) |
+| `baseline_start` | TIMESTAMP WITH TIME ZONE | Время старта по умолчанию (cron AS-IS) |
+| `allow_geo_migration` | BOOLEAN | Разрешено ли переносить задачу в другую энергозону |
+| `created_at` | TIMESTAMP WITH TIME ZONE | Время поступления задачи |
 
 #### Таблица `recommendations`
 
@@ -168,17 +162,19 @@
 
 | Поле | Тип | Описание |
 |---|---|---|
-| `id` | BIGSERIAL | Уникальный идентификатор рекомендации |
-| `job_id` | BIGINT | Идентификатор вычислительной задачи |
-| `datacenter_id` | BIGINT | Выбранный дата-центр |
-| `recommended_start` | TIMESTAMP WITH TIME ZONE | Рекомендуемое время запуска |
+| `recommendation_id` | BIGSERIAL | Уникальный автоинкрементный идентификатор рекомендации (PK) |
+| `job_id` | VARCHAR(100) | Идентификатор вычислительной задачи (FK к jobs) |
+| `datacenter_id` | VARCHAR(50) | Выбранный оптимальный дата-центр (FK к datacenters) |
+| `recommended_start` | TIMESTAMP WITH TIME ZONE | Рекомендуемое оптимальное время запуска |
 | `recommended_end` | TIMESTAMP WITH TIME ZONE | Рекомендуемое время завершения |
-| `estimated_price` | NUMERIC(12,4) | Ожидаемая цена электроэнергии |
-| `estimated_cost` | NUMERIC(14,4) | Ожидаемая полная стоимость выполнения |
-| `estimated_saving` | NUMERIC(14,4) | Расчётная экономия по сравнению с базовым сценарием |
-| `currency` | VARCHAR(10) | Валюта расчёта |
-| `algorithm_version` | VARCHAR(50) | Версия алгоритма или ML-модели |
-| `created_at` | TIMESTAMP WITH TIME ZONE | Время формирования рекомендации |
+| `estimated_energy_kwh` | NUMERIC(12,4) | Ожидаемое энергопотребление с учетом PUE (кВт·ч) |
+| `estimated_cost` | NUMERIC(12,4) | Ожидаемая стоимость выполнения в выбранном окне (€) |
+| `baseline_cost` | NUMERIC(12,4) | Базовая стоимость выполнения (AS-IS) в preferred ЦОД (€) |
+| `estimated_savings` | NUMERIC(12,4) | Расчётная экономия (€) относительно базового сценария |
+| `currency` | VARCHAR(10) | Валюта расчёта (EUR) |
+| `is_fallback` | BOOLEAN | Признак: true — расчёт по резервной 3-недельной медиане, false — по реальным биржевым ценам |
+| `calculated_at` | TIMESTAMP WITH TIME ZONE | Время формирования рекомендации |
+
 
 ### Итоговое сопоставление источников и таблиц
 
