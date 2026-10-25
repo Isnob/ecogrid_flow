@@ -6,98 +6,84 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg)](https://www.postgresql.org/)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
 
-**EcoGrid Flow** — On-Premise аналитический B2B-сервис и рекомендательная система для оптимизации расписания и пространственной маршрутизации (*Geo-Arbitrage*) ресурсоемких серверных вычислений (обучение нейросетей, регулярные dbt/Spark пайплайны, рендеринг, бэкапы).
+**EcoGrid Flow** — On-Premise B2B-сервис, который подбирает для ресурсоемких вычислений (обучение моделей, Spark/dbt-пайплайны, рендеринг, бэкапы) дата-центр и время запуска, при которых электроэнергия обходится дешевле всего, а задача успевает к дедлайну. Учитываются цены на сутки вперед (ENTSO-E) и затраты на охлаждение по прогнозу погоды (Open-Meteo).
 
-Проект разрабатывается в рамках сквозной проектной работы по дисциплине **«Программная инженерия»** (профиль «Инженерия данных», 3 курс, 5-й семестр).
+Проект разрабатывается в рамках сквозной проектной работы по дисциплине **«Программная инженерия»** (профиль «Инженерия данных», 3 курс).
 
 ---
 
-## 👥 Команда «Шпингалеты» (*Shpingalets*)
+## 📚 Документация
 
-| Участник | Роль в проекте | Основная зона ответственности |
+| Документ | О чем |
+| :--- | :--- |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | **С чего начать:** компоненты, поток данных, владельцы, контракты, состояние |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Как работаем: задачи, ветки, PR, ревью, Definition of Done |
+| [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | Требования: FR, NFR, DR, ASR, приоритеты |
+| [docs/adr/](docs/adr/) | Архитектурные решения |
+| [docs/data/](docs/data/) | Схема БД ([ERD](docs/data/ERD.md)), [источники данных](docs/data/sources.md), [S2T-маппинги](docs/data/s2t/) |
+| [docs/contracts/](docs/contracts/) | Контракты расчетного ядра и API |
+| [docs/status/](docs/status/) | Еженедельные статусы |
+| [docs/archive/](docs/archive/) | Учебные материалы (семинары, ТКУ1) — не источник истины |
+
+---
+
+## 👥 Команда «Шпингалеты»
+
+| Участник | Роль | Зона ответственности |
 | :--- | :--- | :--- |
-| **Богдан Леонов** | **Team Lead / PO / Data Engineer** | Управление бэклогом, архитектура данных, ETL-пайплайны, алгоритмы Geo-Arbitrage |
-| **Александр Зейферт** | **Lead Backend / DevOps** | Ядро FastAPI, архитектура PostgreSQL, Docker Compose, CI/CD |
-| **Максим Томов** | **Frontend Developer** | Корпоративный веб-портал на React / TypeScript, ECharts дашборды, карта цен |
-| **Арина Антонова** | **Data Analyst / ML Engineer** | Исследование исторических рядов (EDA), физическая модель PUE, ML-прогнозирование |
-| **Григорий Витрик** | **QA Engineer** | Валидация Data Quality, нагрузочные тесты, автотесты `pytest`, мокирование API |
+| **Богдан Леонов** | Team Lead / PO / Data Engineer | Бэклог, архитектура данных, схема БД, ETL |
+| **Александр Зейферт** | Lead Backend / DevOps | API на FastAPI, Docker Compose, CI |
+| **Арина Антонова** | Data Analyst / ML Engineer | Модель PUE, оптимизатор, EDA |
+| **Максим Томов** | Frontend Developer | Веб-портал, симулятор задач |
+| **Григорий Витрик** | QA Engineer | Тесты, тестовые данные, проверки качества данных |
 
 ---
 
-## 🏛️ Ключевая концепция и архитектура
+## 🎯 Границы MVP (Release 0.5 — декабрь 2026)
 
-Сервис поставляется как изолированная Docker-композиция и развертывается **строго внутри закрытого корпоративного периметра (On-Premise VPC)** клиента. Данные о топологии ЦОД, серверах и задачах компании никогда не покидают защищенный контур.
-
-```
-Внешний интернет:
-[ENTSO-E (Day-Ahead / Gen)] + [Open-Meteo (Погода)]
-                     │ (XML / JSON)
-                     ▼
-Закрытый On-Premise контур клиента:
-[ETL Ingestion Workers] ──► [Data Quality Validation]
-                                    │
-                                    ▼
-                        [PostgreSQL (Timeseries)]
-                                    │
-[Airflow / DataOps] ──► [FastAPI Gateway] ──► [Optimization & ML Engine (PUE + Geo)]
-                                    │
-                                    ▼
-                         [React Web UI Portal]
-```
+* **Входит:**
+  1. Автоматический сбор цен Day-Ahead и прогноза погоды для энергозон `DE-LU`, `FI`, `SE3`.
+  2. Проверка качества входящих данных.
+  3. Модель динамического PUE: затраты на охлаждение ЦОД в зависимости от уличной температуры.
+  4. Поиск самого дешевого окна запуска под дедлайн задачи и выбор ЦОД (гео-арбитраж).
+  5. REST API на FastAPI со Swagger-документацией.
+  6. Веб-портал с симулятором экономии.
+* **Вынесено во 2-й семестр (Release 1.0):**
+  * Собственная ML-модель прогноза цен на 3–7 дней вперед.
+  * Автоматический запуск и остановка инстансов через Cloud API.
+  * Провайдер (Sensor / Operator) для Apache Airflow.
 
 ---
 
-## 📁 Структура репозитория и документация
+## 🚀 Локальный запуск
 
-* **[docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)** — Сводная спецификация требований v1.1.0 (FR, NFR, DR, ASR, MoSCoW).
-* **[docs/seminars/seminar_1/README.md](docs/seminars/seminar_1/README.md)** — Семинар 1: паспорт проекта, роли, границы MVP.
-* **[docs/seminars/seminar_2/README.md](docs/seminars/seminar_2/README.md)** — Семинар 2: Kanban-процесс, бэклог, Definition of Done.
-* **[docs/seminars/seminar_3/README.md](docs/seminars/seminar_3/README.md)** — Семинар 3: стейкхолдеры, глоссарий, AS-IS / TO-BE, контекстная диаграмма.
-* **[docs/seminars/seminar_4/readme.md](docs/seminars/seminar_4/readme.md)** — Семинар 4: требования v1.1.0 (FR / NFR / DR), критерии приемки, ASR.
-* **[docs/seminars/seminar_5/README.md](docs/seminars/seminar_5/README.md)** — Семинар 5: устав проекта, WBS, дорожная карта, RACI.
-* **[docs/seminars/seminar_6/README.md](docs/seminars/seminar_6/README.md)** — Семинар 6: реестр рисков, матрица, план реагирования, задачи по снижению рисков.
-* **[docs/seminars/seminar_7/README.md](docs/seminars/seminar_7/README.md)** — Семинар 7: масштабирование на 4 команды, общие контракты, карта межкомандных зависимостей, правила интеграции.
-* **[docs/seminars/seminar_8/task.md](docs/seminars/seminar_8/task.md)** — Семинар 8: масштабирование разработки (SAFe, LeSS, Nexus).
-* **[docs/tku1/README.md](docs/tku1/README.md)** — промежуточная защита (ТКУ1): инструкция, презентация, текст выступления, где что показать по запросу.
-* **[docs/data ingestion/](docs/data%20ingestion/)** — каталог источников данных и описание полей таблиц.
-* **[docs/adr/](docs/adr/)** — архитектурные решения (ADR): [ADR-001](docs/adr/ADR-001-engine-input-data.md) — входные данные расчетного ядра.
-* **[docs/database/](docs/database/)** — [ER-диаграмма](docs/database/ERD.md) схемы `infra/db/init.sql` и S2T-маппинги источников на таблицы.
-* **[docs/status/](docs/status/)** — еженедельные статус-отчеты проекта.
+Сейчас в стеке два сервиса: `postgres` и `etl-worker` (сбор прогноза погоды раз в 3 часа).
 
----
+1. Скопировать настройки и при необходимости поменять пароль. Без `.env` используются значения по умолчанию из `docker-compose.yml`:
+   ```shell
+   cp .env.example .env
+   ```
+2. Поднять стек и проверить состояние:
+   ```shell
+   docker compose up -d
+   docker compose ps
+   ```
+3. Проверить подключение к БД:
+   ```shell
+   docker compose exec postgres psql -U ecogrid -d ecogrid -c "SELECT datacenter_id FROM datacenters;"
+   ```
+4. Загрузить архив погоды (разово, по всем активным ЦОД):
+   ```shell
+   docker compose run --rm etl-worker python run_historical_weather.py --start-date 2023-10-01 --end-date 2026-10-20
+   ```
 
-## 🎯 Границы MVP (Release 50% — Декабрь 2026)
-
-* **Реализуется в первом семестре:**
-  1. Автоматический сбор Day-Ahead тарифов биржи и прогнозов погоды по целевым энергозонам (`DE-LU`, `FI`, `SE3`).
-  2. Data Quality валидация входящих временных рядов.
-  3. Физико-математическая модель расчета динамического PUE охлаждения дата-центров по уличной температуре.
-  4. Движок оптимизации скользящего окна запуска под SLA-дедлайн задачи.
-  5. Пространственный арбитраж (Geo-Arbitrage) между несколькими ЦОД.
-  6. Защищенный REST API (FastAPI) с интерактивной Swagger-документацией.
-  7. Веб-портал (React SPA) с картой тарифов и симулятором экономии.
-* **Вынесено во 2-й семестр (Release 100%):**
-  * Обучение собственной ML-модели на 5-летнем архиве для прогнозирования тарифов на 3–7 дней вперед.
-  * Прямая интеграция с Cloud API для автоматического запуска/остановки инстансов.
-  * Нативный провайдер (Sensor/Operator) под Apache Airflow.
-
-### Local PostgreSQL
-
-Optionally copy `.env.example` to `.env` and change the development credentials.
-The defaults from `.env.example` are also used when `.env` is absent.
+`infra/db/init.sql` выполняется автоматически только на пустой базе. Чтобы применить изменения схемы к уже созданной базе, скрипт можно прогнать повторно — он идемпотентный:
 
 ```shell
-docker compose up -d
-docker compose ps
+docker compose exec -T postgres psql -U ecogrid -d ecogrid < infra/db/init.sql
 ```
 
-Test the connection from inside the container:
-
-```shell
-docker compose exec postgres psql -U ecogrid -d ecogrid -c "SELECT 1;"
-```
-
-Stop the container without deleting its persistent data:
+Остановить стек без удаления данных:
 
 ```shell
 docker compose down

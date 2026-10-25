@@ -15,9 +15,14 @@ CREATE TABLE IF NOT EXISTS datacenters (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Добавляем сид для ЦОД в Хельсинки с координатами из тестового запроса
+-- Сид синтетических ЦОД по одному на энергозону MVP.
+-- base_pue Хельсинки и Франкфурта взяты из BDD-сценария 1; base_pue Стокгольма предварительный,
+-- значения уточняются по итогам ресерча PUE.
 INSERT INTO datacenters (datacenter_id, name, bidding_zone, latitude, longitude, base_pue, max_power_kw)
-VALUES ('FI-HELSINKI-01', 'Helsinki Nordic DC', 'FI', 60.1695, 24.9354, 1.150, 500.00)
+VALUES
+    ('FI-HELSINKI-01',  'Helsinki Nordic DC',   'FI',    60.1695, 24.9354, 1.150, 500.00),
+    ('DE-FRANKFURT-01', 'Frankfurt Central DC', 'DE-LU', 50.1109,  8.6821, 1.250, 1000.00),
+    ('SE-STOCKHOLM-01', 'Stockholm Nordic DC',  'SE3',   59.3293, 18.0686, 1.150, 500.00)
 ON CONFLICT (datacenter_id) DO NOTHING;
 
 
