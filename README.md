@@ -49,15 +49,18 @@
 
 ## 📁 Структура репозитория и документация
 
-* **[docs/seminar_1/README.md](docs/seminar_1/README.md)** — Семинар 1: паспорт проекта, роли, границы MVP.
-* **[docs/seminar_2/README.md](docs/seminar_2/README.md)** — Семинар 2: Kanban-процесс, бэклог, Definition of Done.
-* **[docs/seminar_3/README.md](docs/seminar_3/README.md)** — Семинар 3: стейкхолдеры, глоссарий, AS-IS / TO-BE, контекстная диаграмма.
-* **[docs/seminar_4/readme.md](docs/seminar_4/readme.md)** — Семинар 4: требования v1.1.0 (FR / NFR / DR), критерии приемки, ASR.
-* **[docs/seminar_5/README.md](docs/seminar_5/README.md)** — Семинар 5: устав проекта, WBS, дорожная карта, RACI.
-* **[docs/seminar_6/README.md](docs/seminar_6/README.md)** — Семинар 6: реестр рисков, матрица, план реагирования, задачи по снижению рисков.
-* **[docs/seminar_7/README.md](docs/seminar_7/README.md)** — Семинар 7: масштабирование на 4 команды, общие контракты, карта межкомандных зависимостей, правила интеграции.
+* **[docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)** — Сводная спецификация требований v1.1.0 (FR, NFR, DR, ASR, MoSCoW).
+* **[docs/seminars/seminar_1/README.md](docs/seminars/seminar_1/README.md)** — Семинар 1: паспорт проекта, роли, границы MVP.
+* **[docs/seminars/seminar_2/README.md](docs/seminars/seminar_2/README.md)** — Семинар 2: Kanban-процесс, бэклог, Definition of Done.
+* **[docs/seminars/seminar_3/README.md](docs/seminars/seminar_3/README.md)** — Семинар 3: стейкхолдеры, глоссарий, AS-IS / TO-BE, контекстная диаграмма.
+* **[docs/seminars/seminar_4/readme.md](docs/seminars/seminar_4/readme.md)** — Семинар 4: требования v1.1.0 (FR / NFR / DR), критерии приемки, ASR.
+* **[docs/seminars/seminar_5/README.md](docs/seminars/seminar_5/README.md)** — Семинар 5: устав проекта, WBS, дорожная карта, RACI.
+* **[docs/seminars/seminar_6/README.md](docs/seminars/seminar_6/README.md)** — Семинар 6: реестр рисков, матрица, план реагирования, задачи по снижению рисков.
+* **[docs/seminars/seminar_7/README.md](docs/seminars/seminar_7/README.md)** — Семинар 7: масштабирование на 4 команды, общие контракты, карта межкомандных зависимостей, правила интеграции.
+* **[docs/seminars/seminar_8/task.md](docs/seminars/seminar_8/task.md)** — Семинар 8: масштабирование разработки (SAFe, LeSS, Nexus).
 * **[docs/tku1/README.md](docs/tku1/README.md)** — промежуточная защита (ТКУ1): инструкция, презентация, текст выступления, где что показать по запросу.
 * **[docs/data ingestion/](docs/data%20ingestion/)** — каталог источников данных и описание полей таблиц.
+* **[docs/adr/](docs/adr/)** — архитектурные решения (ADR): [ADR-001](docs/adr/ADR-001-engine-input-data.md) — входные данные расчетного ядра.
 * **[docs/database/](docs/database/)** — [ER-диаграмма](docs/database/ERD.md) схемы `infra/db/init.sql` и S2T-маппинги источников на таблицы.
 * **[docs/status/](docs/status/)** — еженедельные статус-отчеты проекта.
 

@@ -225,7 +225,7 @@ graph LR
 
 Спецификация фиксирует требования ко всем **7 таблицам системы** в соответствии с каталогом источников данных и описанием схем `PreColumns.md`.
 
-Диаграмма ниже соответствует текущему DDL [`infra/db/init.sql`](../../infra/db/init.sql) (6 таблиц и представление почасовых цен); таблица `entsoe_day_ahead_generation` (`DR-02`) пока не создана. Ключи, связи и план по схеме — в [ER-диаграмме](../database/ERD.md).
+Диаграмма ниже соответствует текущему DDL [`infra/db/init.sql`](../../../infra/db/init.sql) (6 таблиц и представление почасовых цен); таблица `entsoe_day_ahead_generation` (`DR-02`) пока не создана. Ключи, связи и план по схеме — в [ER-диаграмме](../../database/ERD.md).
 
 ```mermaid
 erDiagram
@@ -530,7 +530,7 @@ sequenceDiagram
         Lead-->>Backlog: Отклонение CR с указанием причины
     else Требование согласовано
         Lead->>Backlog: Перевод тикета в статус "Approved"
-        Lead->>Git: Внесение правок в спецификацию (docs/seminar_4/readme.md)
+        Lead->>Git: Внесение правок в спецификацию (docs/seminars/seminar_4/readme.md)
         Lead->>Git: Инкремент версии требований (v1.0 -> v1.1) и запись в Change Log
         Lead->>Backlog: Создание связанных технических задач (Tasks) на разработку и тесты
     end

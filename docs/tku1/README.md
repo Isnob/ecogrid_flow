@@ -27,14 +27,14 @@
 
 | Материал | Где лежит |
 | :--- | :--- |
-| Паспорт проекта, команда, зоны ответственности | [Семинар 1](../seminar_1/README.md) |
-| Kanban, Definition of Done, правила разработки | [Семинар 2](../seminar_2/README.md) |
-| Стейкхолдеры, AS-IS / TO-BE, контекстная диаграмма (C4 Context) | [Семинар 3](../seminar_3/README.md), запасной слайд П1 |
+| Паспорт проекта, команда, зоны ответственности | [Семинар 1](../seminars/seminar_1/README.md) |
+| Kanban, Definition of Done, правила разработки | [Семинар 2](../seminars/seminar_2/README.md) |
+| Стейкхолдеры, AS-IS / TO-BE, контекстная диаграмма (C4 Context) | [Семинар 3](../seminars/seminar_3/README.md), запасной слайд П1 |
 | Каталог источников данных, описание полей таблиц | [data sources](../data%20ingestion/data%20sources.md), [PreColumns](../data%20ingestion/PreColumns.md) |
-| FR / NFR / требования к данным, критерии приёмки | [Семинар 4](../seminar_4/readme.md) |
-| Устав, WBS, дорожная карта до Release 0.5 | [Семинар 5](../seminar_5/README.md) |
-| Реестр рисков | [Семинар 6](../seminar_6/README.md), запасной слайд П2 |
-| Схема масштабирования команд, карта зависимостей | [Семинар 7](../seminar_7/README.md), запасные слайды П3–П4 |
+| FR / NFR / требования к данным, критерии приёмки | [Семинар 4](../seminars/seminar_4/readme.md) |
+| Устав, WBS, дорожная карта до Release 0.5 | [Семинар 5](../seminars/seminar_5/README.md) |
+| Реестр рисков | [Семинар 6](../seminars/seminar_6/README.md), запасной слайд П2 |
+| Схема масштабирования команд, карта зависимостей | [Семинар 7](../seminars/seminar_7/README.md), запасные слайды П3–П4 |
 | Поток данных и C4 Container | Слайд 5 презентации |
 | Доска задач и бэклог | «Сфера.Задачи», проект `ID24_EGF` |
 | Код: PostgreSQL в Docker Compose, вёрстка формы задачи | [docker-compose.yml](../../docker-compose.yml), [web/](../../web/) |

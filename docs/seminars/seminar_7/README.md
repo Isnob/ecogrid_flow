@@ -134,7 +134,7 @@ ecogrid_repo/
 
 | Компонент | Владелец | Кто использует | Что это | Правило изменения |
 | :--- | :---: | :--- | :--- | :--- |
-| **База данных PostgreSQL 16** | PLAT | Все | Один экземпляр в Docker Compose; 7 таблиц из [описания полей](../data%20ingestion/PreColumns.md) | Таблицу меняет только ее владелец (п. 2.3); миграцию проверяет PLAT |
+| **База данных PostgreSQL 16** | PLAT | Все | Один экземпляр в Docker Compose; 7 таблиц из [описания полей](../../data%20ingestion/PreColumns.md) | Таблицу меняет только ее владелец (п. 2.3); миграцию проверяет PLAT |
 | **REST API** (`/api/v1/…`) | APP | Веб-портал, оркестраторы клиента, тесты PLAT | Эндпоинты рекомендаций и реестра ЦОД (`FR-API-01…05`) | Описан в `contracts/openapi.yaml`; изменение — через `CT-05` |
 | **Интерфейс ядра** | CORE | APP | Python-функция расчета рекомендации (`CT-04`) | Изменение сигнатуры — только с согласия APP |
 | **Библиотека `ecogrid_common`** | PLAT | Все | Модели данных (Pydantic), работа со временем в UTC, логгер, проверка Bearer-токена | Версионируется отдельно; обновление — в отдельном MR |
@@ -184,7 +184,7 @@ ecogrid_repo/
 | `resolution` | `varchar(10)` | да | `PT15M` или `PT60M` |
 | `retrieved_at` | `timestamptz` | да | Время загрузки в БД |
 
-Ядро читает не саму таблицу, а представление `v_entsoe_prices_hourly` — почасовой ряд: 15-минутные цены усредняются до часа, при наличии обоих шагов берется `PT60M`. Схема — в [ER-диаграмме](../database/ERD.md).
+Ядро читает не саму таблицу, а представление `v_entsoe_prices_hourly` — почасовой ряд: 15-минутные цены усредняются до часа, при наличии обоих шагов берется `PT60M`. Схема — в [ER-диаграмме](../../database/ERD.md).
 
 Гарантия поставщика: в таблицу попадают только партии, прошедшие DQ Gate; за сутки — 24 значения при `PT60M` или 96 при `PT15M`; цены на завтра появляются до 14:30 CET.
 
@@ -203,6 +203,9 @@ def recommend(job: JobSpec, now: datetime) -> Recommendation:
 | :--- | :--- |
 | `JobSpec` (вход) | `job_id`, `duration_minutes`, `required_power_kw`, `earliest_start`, `deadline`, `allowed_zones`, `preferred_datacenter_id`, `baseline_start` |
 | `Recommendation` (выход) | `recommendation_id`, `job_id`, `target_datacenter`, `recommended_start`, `recommended_end`, `estimated_cost_eur`, `baseline_cost_eur`, `estimated_savings_eur`, `estimated_savings_percent`, `is_fallback`, `warning` |
+
+> [!NOTE]
+> Решение изменено [ADR-001](../../adr/ADR-001-engine-input-data.md): ядро не читает БД — цены, погоду и параметры ЦОД собирает в почасовые ряды API-слой и передает ядру на вход.
 
 Ошибки ядра — исключения из `ecogrid_common.errors`: `DeadlineUnreachable` (API отвечает 422), `InvalidBaseline` (422), `NoDataAvailable` (503, если нет даже данных для запасного режима). Отсутствие свежих цен — **не ошибка**: ядро считает в запасном режиме и возвращает `is_fallback = true` и текст `warning` (`FR-ENG-05`).
 
