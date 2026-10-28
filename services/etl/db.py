@@ -3,7 +3,7 @@
 """
 
 import os
-from typing import List, Tuple
+from typing import List, Set, Tuple
 import psycopg
 
 
@@ -74,6 +74,57 @@ def save_weather_forecast(conn, datacenter_id: str, records: List[Tuple]) -> int
     conn.commit()
 
     return len(rows)
+
+
+def save_day_ahead_prices(conn, records: List[Tuple]) -> int:
+    """
+    Пакетная вставка цен Day-Ahead с обновлением при совпадении ключа (UPSERT).
+    Формат каждого кортежа в records:
+    (bidding_zone, period_start, period_end, resolution, price, currency, price_unit)
+    """
+    if not records:
+        return 0
+
+    query = """
+    INSERT INTO entsoe_day_ahead_prices (
+        bidding_zone,
+        period_start,
+        period_end,
+        resolution,
+        price,
+        currency,
+        price_unit,
+        retrieved_at
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+    ON CONFLICT (bidding_zone, period_start, resolution)
+    DO UPDATE SET
+        period_end   = EXCLUDED.period_end,
+        price        = EXCLUDED.price,
+        currency     = EXCLUDED.currency,
+        price_unit   = EXCLUDED.price_unit,
+        retrieved_at = NOW();
+    """
+
+    with conn.cursor() as cur:
+        cur.executemany(query, records)
+    conn.commit()
+
+    return len(records)
+
+
+def get_zones_with_prices(conn, period_start, period_end) -> Set[str]:
+    """
+    Возвращает энергозоны, по которым в БД есть цены в интервале [period_start; period_end).
+    """
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT DISTINCT bidding_zone FROM entsoe_day_ahead_prices
+            WHERE period_start >= %s AND period_start < %s;
+            """,
+            (period_start, period_end),
+        )
+        return {row[0] for row in cur.fetchall()}
 
 
 def save_historical_weather(conn, datacenter_id: str, records: List[Tuple]) -> int:

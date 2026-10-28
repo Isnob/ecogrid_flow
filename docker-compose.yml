@@ -27,7 +27,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ecogrid}
       POSTGRES_USER: ${POSTGRES_USER:-ecogrid}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ecogrid_dev_password}
-      WEATHER_INTERVAL_HOURS: 3
+      WEATHER_UPDATE_INTERVAL_HOURS: 3
+      ENTSOE_API_TOKEN: ${ENTSOE_API_TOKEN:-}
     depends_on:
       postgres:
         condition: service_healthy
