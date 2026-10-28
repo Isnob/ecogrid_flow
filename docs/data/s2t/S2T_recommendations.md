@@ -14,8 +14,10 @@
 ## 1. Контекст источника (Optimization Core Engine Output)
 
 Результат расчёта скользящего окна формируется после перебора доступных площадок и временных слотов с учётом почасового PUE от температуры:
-$$\text{Cost}(t) = \frac{\text{power\_kw} \times PUE(T_t)}{1000} \times \text{Price}_{\text{Day-Ahead}}(t)$$
-$$\text{Savings} = \text{Baseline Cost} - \text{Estimated Cost}$$
+```
+cost(t)  = power_kw × PUE(T_t) / 1000 × price_day_ahead(t)
+savings  = baseline_cost − estimated_cost
+```
 
 ---
 
@@ -43,5 +45,5 @@ $$\text{Savings} = \text{Baseline Cost} - \text{Estimated Cost}$$
 * **Дедлайн (`FR-ENG-03`):** `recommended_end <= job.deadline`. Ядру запрещено рекомендовать более дешёвое окно, если оно нарушает дедлайн клиента.
 * **Непрерывность (`FR-ENG-02`):** Дробление задачи запрещено, окно непрерывно (`recommended_end - recommended_start = duration_minutes`).
 * **Экономия:** В ответе API клиенту дополнительно возвращается процент экономии:
-  $$\text{estimated\_savings\_percent} = \frac{\text{estimated\_savings\_eur}}{\text{baseline\_cost\_eur}} \times 100\%$$
+  `estimated_savings_percent = estimated_savings_eur / baseline_cost_eur × 100`
 * **Транзакционность:** Запись рекомендации в БД и формирование ответа клиенту выполняются в единой атомарной транзакции. При ошибке БД транзакция откатывается.
