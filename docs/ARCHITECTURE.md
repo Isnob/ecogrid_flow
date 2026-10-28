@@ -90,5 +90,6 @@ flowchart LR
 | [data/sources.md](data/sources.md) | Источники данных и правила загрузки |
 | [data/s2t/](data/s2t/) | Маппинг полей источник → таблица |
 | [contracts/](contracts/) | Контракты ядра и API |
+| [research/](research/) | Исследования: рынок, параметры модели PUE |
 | [status/](status/) | Еженедельные статусы |
 | [archive/](archive/) | Учебные материалы (семинары, ТКУ1) — не источник истины |

@@ -20,6 +20,7 @@ venv/
 .vscode/
 *.swp
 .postman/
+.obsidian/
 postman/
 
 # Песочница для локальных черновиков

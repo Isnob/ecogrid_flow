@@ -22,6 +22,7 @@
 | [docs/adr/](docs/adr/) | Архитектурные решения |
 | [docs/data/](docs/data/) | Схема БД ([ERD](docs/data/ERD.md)), [источники данных](docs/data/sources.md), [S2T-маппинги](docs/data/s2t/) |
 | [docs/contracts/](docs/contracts/) | Контракты расчетного ядра и API |
+| [docs/research/](docs/research/) | Исследования: [рынок](docs/research/market.md), параметры модели PUE |
 | [docs/status/](docs/status/) | Еженедельные статусы |
 | [docs/archive/](docs/archive/) | Учебные материалы (семинары, ТКУ1) — не источник истины |
 
