@@ -241,5 +241,5 @@ erDiagram
 | `baseline_cost` | Стоимость в `preferred_datacenter_id` со старта `baseline_start` |
 | `estimated_savings` | `baseline_cost − estimated_cost` |
 | `currency` | Валюта стоимостей, код ISO 4217 (`EUR`) |
-| `is_fallback` | `true` — расчет по медиане цен за 3 недели, потому что свежих цен нет (`FR-ENG-05`) |
+| `is_fallback` | `false` — основная рекомендация (только по реальным ценам); `true` — оценочный вариант (цены после последней известной — медиана за 3 недели) ([ADR-001](../adr/ADR-001-engine-input-data.md)) |
 | `calculated_at` | Когда выполнен расчет |
