@@ -11,5 +11,5 @@
 | [Семинар 5](seminars/seminar_5/README.md) | Устав, WBS, дорожная карта, RACI, формат статуса |
 | [Семинар 6](seminars/seminar_6/README.md) | Реестр рисков, индикаторы раннего предупреждения |
 | [Семинар 7](seminars/seminar_7/README.md) | Масштабирование на 4 команды, межкомандные контракты |
-| [Семинар 8](seminars/seminar_8/task.md) | Задание: масштабирование разработки (SAFe, LeSS, Nexus) |
+| [Семинар 8](seminars/seminar_8/README.md) | Модель координации команд (SAFe, LeSS, Nexus), release plan Release 0.5, общие решения |
 | [ТКУ1](tku1/README.md) | Промежуточная защита: презентация, выступление, ответы на вопросы |
