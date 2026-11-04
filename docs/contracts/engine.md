@@ -83,14 +83,12 @@ request = EngineRequest(
             "hours": [
                 {
                     "timestamp": "2026-11-03T10:00:00Z",
-                    "minutes": 60,
                     "price_eur_per_mwh": 42.5,
                     "temperature_c": 4.0,
                     "price_is_estimated": False,
                 },
                 {
                     "timestamp": "2026-11-03T11:00:00Z",
-                    "minutes": 60,
                     "price_eur_per_mwh": 39.0,
                     "temperature_c": 4.5,
                     "price_is_estimated": False,

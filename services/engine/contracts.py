@@ -77,6 +77,11 @@ class DatacenterInput(EngineModel):
             raise ValueError("hours must not contain duplicate timestamps")
         if timestamps != sorted(timestamps):
             raise ValueError("hours must be sorted chronologically")
+        if any(
+            current - previous != timedelta(hours=1)
+            for previous, current in zip(timestamps, timestamps[1:])
+        ):
+            raise ValueError("hours must form a continuous hourly grid without gaps")
         return self
 
 
@@ -155,6 +160,29 @@ class Recommendation(EngineModel):
                 "is_fallback must be true if the recommendation or baseline uses "
                 "an estimated price"
             )
+        if self.baseline_cost_eur == 0 and self.estimated_savings_percent is not None:
+            raise ValueError("estimated_savings_percent must be null when baseline is zero")
+        if self.baseline_cost_eur != 0 and self.estimated_savings_percent is None:
+            raise ValueError("estimated_savings_percent is required when baseline is non-zero")
+        if self.recommended_start.minute or self.recommended_start.second:
+            raise ValueError("recommended_start must be aligned to the start of an hour")
+        if self.recommended_end <= self.recommended_start:
+            raise ValueError("recommended_end must be after recommended_start")
+
+        expected_timestamp = self.recommended_start
+        remaining_minutes = int(
+            (self.recommended_end - self.recommended_start).total_seconds() / 60
+        )
+        for hour in self.hourly_costs:
+            expected_minutes = min(60, remaining_minutes)
+            if hour.timestamp != expected_timestamp:
+                raise ValueError("hourly_costs must cover consecutive hours without gaps")
+            if hour.minutes != expected_minutes:
+                raise ValueError("HourCost.minutes must match the actual selected interval")
+            expected_timestamp += timedelta(hours=1)
+            remaining_minutes -= expected_minutes
+        if remaining_minutes != 0:
+            raise ValueError("hourly_costs must cover the complete selected interval")
         return self
 
 
@@ -175,6 +203,16 @@ class EngineResponse(EngineModel):
             )
         if self.reason == "data_unavailable" and self.recommendations:
             raise ValueError("data_unavailable response must not contain recommendations")
+        has_confirmed_recommendation = any(
+            not recommendation.is_fallback for recommendation in self.recommendations
+        )
+        if self.recommendations and not has_confirmed_recommendation:
+            if self.reason not in {"no_confirmed_window", "baseline_estimated"}:
+                raise ValueError(
+                    "reason must explain why there is no confirmed recommendation"
+                )
+        elif has_confirmed_recommendation and self.reason is not None:
+            raise ValueError("reason must be null when a confirmed recommendation exists")
         return self
 
 
