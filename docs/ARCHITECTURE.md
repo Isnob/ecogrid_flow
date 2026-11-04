@@ -54,7 +54,7 @@ flowchart LR
 | **K1. Внешние источники** | ENTSO-E, Open-Meteo → etl-worker | Богдан | Григорий | [S2T-маппинги](data/s2t/) | Open-Meteo — готово; ENTSO-E — после токена |
 | **K2. Схема БД** | etl-worker → БД → API | Богдан | Александр, Григорий | `infra/db/init.sql`, [ERD](data/ERD.md) | Готово (v1) |
 | **K3. Вход и выход ядра** | API ↔ ядро | Арина | Александр | [contracts/](contracts/) | Не начато |
-| **K4. REST API** | API ↔ веб-портал, клиент | Александр | Максим, Григорий | [contracts/](contracts/) | Не начато; требования — `FR-API-01…05` |
+| **K4. REST API** | API ↔ веб-портал, клиент | Александр | Максим, Григорий | [контракт](contracts/api.md), `services/api/schemas.py` | Контракт `POST /api/v1/recommendations` подготовлен к ревью; обработчик ещё не реализован |
 
 ---
 
