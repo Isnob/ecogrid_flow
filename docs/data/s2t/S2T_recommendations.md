@@ -35,7 +35,7 @@ savings  = baseline_cost − estimated_cost
 | **8** | `baseline_cost_eur` | `float` | `145.00` | Базовая стоимость в preferred ЦОД (€) | `baseline_cost` | `NUMERIC(12, 4)` | `NOT NULL` | `baseline_cost_eur` |
 | **9** | `estimated_savings_eur` | `float` | `32.50` | `baseline_cost − estimated_cost` | `estimated_savings` | `NUMERIC(12, 4)` | `NOT NULL` | `estimated_savings_eur` |
 | **10** | *(Фиксированная валюта)* | `string` | `"EUR"` | Валюта расчёта биржевых цен (ISO 4217) | `currency` | `VARCHAR(3)` | `NOT NULL DEFAULT 'EUR'` | *(контекст)* |
-| **11** | `is_fallback` | `boolean` | `false` | `false` — выбранное и базовое окна только с реальными ценами; `true` — оценочная цена хотя бы в одном из них (ADR-001) | `is_fallback` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` | `is_fallback` |
+| **11** | `is_fallback` | `boolean` | `false` | `false` — основная рекомендация по реальным ценам; `true` — оценочная цена (восстановленная DQ или рассчитанная API) использована в окне рекомендации либо базовой стоимости (ADR-001, ADR-003) | `is_fallback` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` | `is_fallback` |
 | **12** | *(Системное время)* | `datetime` | `2026-10-25 14:00:02+00` | Время генерации рекомендации: `NOW()` в UTC | `calculated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` | *(timestamp)* |
 
 ---
