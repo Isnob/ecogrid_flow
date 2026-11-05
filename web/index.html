@@ -36,24 +36,25 @@
             <h1>Параметры задачи</h1>
 
             <p class="description">
-                Укажите параметры вычислительной задачи
+                Прототип формы. Расчёт станет доступен после подключения сервиса рекомендаций.
             </p>
 
 
             <form id="taskForm">
 
-                <!-- Название задачи -->
+                <!-- Идентификатор задачи -->
                 <div class="form-group">
 
-                    <label for="taskName">
-                        Название задачи
+                    <label for="job_id">
+                        Идентификатор задачи
                     </label>
 
                     <input
                         type="text"
-                        id="taskName"
-                        name="taskName"
-                        placeholder="Например: Обучение ML-модели"
+                        id="job_id"
+                        name="job_id"
+                        placeholder="Например: training-001"
+                        maxlength="100"
                         required
                     >
 
@@ -66,15 +67,16 @@
                     <div class="form-group">
 
                         <label for="duration">
-                            Длительность вычислений, часы
+                            Длительность вычислений, минуты
                         </label>
 
                         <input
                             type="number"
                             id="duration"
-                            name="duration"
+                            name="duration_minutes"
                             min="1"
-                            placeholder="24"
+                            placeholder="90"
+                            step="1"
                             required
                         >
 
@@ -109,9 +111,9 @@
                     <input
                         type="number"
                         id="power"
-                        name="power"
-                        min="0"
-                        step="1"
+                        name="required_power_kw"
+                        min="0.01"
+                        step="any"
                         placeholder="10"
                         required
                     >
@@ -133,7 +135,7 @@
 
                             <input
                                 type="checkbox"
-                                name="regions"
+                                name="allowed_zones"
                                 value="FI"
                             >
 
@@ -146,8 +148,8 @@
 
                             <input
                                 type="checkbox"
-                                name="regions"
-                                value="SE"
+                                name="allowed_zones"
+                                value="SE3"
                             >
 
                             Швеция
@@ -159,8 +161,8 @@
 
                             <input
                                 type="checkbox"
-                                name="regions"
-                                value="DE"
+                                name="allowed_zones"
+                                value="DE-LU"
                             >
 
                             Германия
@@ -173,9 +175,9 @@
 
 
                 <!-- Кнопка -->
-                <button type="submit" class="submit-button">
+                <button type="button" class="submit-button" disabled>
 
-                    Рассчитать оптимальное окно
+                    Расчёт пока недоступен
 
                 </button>
 
@@ -201,8 +203,7 @@
     </main>
 
 
-    <!-- Подключение JavaScript -->
-    <script src="script.js"></script>
+    <!-- Подключение к API будет добавлено вместе с обработчиком рекомендаций. -->
 
 </body>
 </html>
