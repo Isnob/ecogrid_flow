@@ -80,7 +80,7 @@ class DQGate(unittest.TestCase):
         self.assertFalse(saved)
         self.assertEqual(sum(e['reason'] == 'gap_unfilled' for e in events), 3)
 
-    def test_database_upsert_prefers_original(self):
+    def test_upsert_query_and_payload_contract(self):
         for saver, records, args in (
             (save_checked_prices, [price(0), price(2, 30)], ('FI', T, T + timedelta(minutes=45))),
             (save_checked_weather, [weather(0), weather(2, 30)], ('FI-HELSINKI-01', T, T + timedelta(hours=3))),
