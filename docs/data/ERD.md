@@ -145,7 +145,7 @@ erDiagram
 | `jobs` | `job_id` | `idx_jobs_created_at (created_at)` |
 | `recommendations` | `recommendation_id` | `idx_recommendations_job_id (job_id)`, `idx_recommendations_calculated_at (calculated_at)` |
 
-`resolution` входит в ключ цен, потому что за одни сутки ENTSO-E может опубликовать ряд и с шагом `PT60M`, и с шагом `PT15M`. Расчетное ядро читает цены не из таблицы, а из представления `v_entsoe_prices_hourly` — единой почасовой сетки.
+`resolution` входит в ключ цен, потому что за одни сутки ENTSO-E может опубликовать ряд и с шагом `PT60M`, и с шагом `PT15M`. API собирает цены для расчетного ядра не из таблицы, а из представления `v_entsoe_prices_hourly` — единой почасовой сетки.
 
 ---
 
