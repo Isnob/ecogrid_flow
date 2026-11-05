@@ -4,7 +4,7 @@
 
 from collectors.open_meteo import fetch_weather_forecast
 from db import get_connection, get_active_datacenters
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from uuid import uuid4
 from psycopg.types.json import Jsonb
@@ -64,28 +64,31 @@ def grid(start, end, step):
         start += step
 
 
-def prepare_weather(records):
-    """Fill internal hourly gaps from a genuine neighbour at most one hour away.
-
-    Never extend the forecast horizon or recursively use restored observations.
-    """
+def prepare_weather(records, start, end):
+    """Fill bounded one-hour gaps from original endpoints."""
     valid, events = validate(records, weather_errors, lambda r: r[0])
-    stamps = [r[0] for r in records if isinstance(r, (tuple, list)) and r and aware(r[0])
-              and not (r[0].minute or r[0].second or r[0].microsecond)]
-    if not stamps:
-        return [], events
-    genuine = {r[0]: r for r in valid}
+    originals = {r[0]: r for r in valid}
     result = [r + (None,) for r in valid]
-    for stamp in grid(min(stamps), max(stamps) + timedelta(hours=1), timedelta(hours=1)):
-        if stamp in genuine:
+    slots = list(grid(start, end, timedelta(hours=1)))
+    i = 0
+    while i < len(slots):
+        if slots[i] in originals:
+            i += 1
             continue
-        neighbours = [r for r in valid if abs(r[0] - stamp) <= timedelta(hours=1)]
-        if neighbours:
-            neighbour = min(neighbours, key=lambda r: (abs(r[0] - stamp), r[0]))
-            result.append((stamp,) + neighbour[1:] + ("nearest_hour",))
-            events.append(event("gap_filled_nearest_hour", {"time": stamp, "source_time": neighbour[0]}))
-        else:
-            events.append(event("gap_unfilled_no_neighbour", {"time": stamp}))
+        first = i
+        while i < len(slots) and slots[i] not in originals:
+            i += 1
+        left = originals.get(slots[first - 1]) if first else None
+        right = originals.get(slots[i]) if i < len(slots) else None
+        gap = slots[first:i]
+        fill = left is not None and right is not None and len(gap) <= 1
+        values = [((Decimal(str(a)) + Decimal(str(b))) / 2).quantize(Decimal("0.01")) if a is not None and b is not None else None for a, b in zip(left[1:], right[1:])] if fill else None
+        for stamp in gap:
+            if fill:
+                result.append((stamp, *values, "boundary_mean"))
+                events.append(event("gap_filled_boundary_mean", {"time": stamp}))
+            else:
+                events.append(event("gap_unfilled", {"time": stamp}))
     return result, events
 
 
@@ -111,8 +114,8 @@ def write_events(cur, source, entity, events):
     )
 
 
-def save_checked_weather(conn, dc_id, records):
-    rows, events = prepare_weather(records)
+def save_checked_weather(conn, dc_id, records, start, end):
+    rows, events = prepare_weather(records, start, end)
     if not records:
         events.append({"reason": "empty_forecast", "payload": []})
     with conn.transaction(), conn.cursor() as cur:
@@ -155,7 +158,8 @@ def run_pipeline():
                 forecast_records = fetch_weather_forecast(float(lat), float(lon), forecast_days=16)
 
                 # Сохраняем в БД
-                count, issues = save_checked_weather(conn, dc_id, forecast_records)
+                start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+                count, issues = save_checked_weather(conn, dc_id, forecast_records, start, start + timedelta(days=16))
                 print(f"  DQ: {issues} событий в журнале")
                 print(f"✓ Успешно сохранено/обновлено {count} точек прогноза для {dc_id}")
 

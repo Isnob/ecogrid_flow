@@ -121,7 +121,9 @@ CREATE INDEX IF NOT EXISTS idx_entsoe_prices_period_start
     ON entsoe_day_ahead_prices (period_start);
 
 
--- DQ Gate: идемпотентное обновление существующей БД. DDL на ревью Богдану.
+-- DQ Gate: NULL = исходное значение, boundary_mean = среднее исходных границ короткого разрыва.
+-- Старые median_21d/nearest_hour нельзя переименовывать без пересчёта.
+-- Идемпотентное обновление существующей БД. DDL на ревью Богдану.
 ALTER TABLE entsoe_day_ahead_prices ADD COLUMN IF NOT EXISTS imputation_method TEXT;
 ALTER TABLE open_meteo_forecast ADD COLUMN IF NOT EXISTS imputation_method TEXT;
 

@@ -14,9 +14,7 @@ from zoneinfo import ZoneInfo
 from collectors.entso_e_days_ahead import BIDDING_ZONES, fetch_day_ahead_prices
 from db import get_connection
 
-from collections import defaultdict
 from decimal import Decimal, InvalidOperation
-from statistics import median
 from uuid import uuid4
 from psycopg.types.json import Jsonb
 
@@ -96,50 +94,38 @@ def grid(start, end, step):
         start += step
 
 
-def prepare_prices(records, history=(), now=None):
-    """Return rows extended by imputation_method and journal events.
-
-    History contains genuine rows only. Fill only days/resolutions evidenced by
-    the response; never invent an unpublished day or an unknown resolution.
-    UTC time-of-day matches the calculation grid, including DST repeated hours.
-    """
-    now = now or datetime.now(UTC)
+def prepare_prices(records, zone, start, end, existing=()):
+    """Fill bounded gaps up to one hour from original endpoints."""
     valid, events = validate(records, price_errors, lambda r: (r[0], r[1], r[3]))
-    genuine = { (r[0], r[1], r[3]): tuple(r) for r in history if not price_errors(r) }
-    genuine.update({(r[0], r[1], r[3]): r for r in valid})
-    groups = set()
-    for row in records:
-        if (isinstance(row, (tuple, list)) and len(row) == 7
-                and row[0] in {"DE-LU", "FI", "SE3"}
-                and aware(row[1]) and row[3] in STEPS):
-            groups.add((row[0], row[1].astimezone(MARKET_TZ).date(), row[3]))
+    originals = {(r[0], r[1], r[3]): tuple(r) for r in existing if not price_errors(r)}
+    originals.update({(r[0], r[1], r[3]): r for r in valid})
     result = {(r[0], r[1], r[3]): r + (None,) for r in valid}
-    for zone, day, resolution in sorted(groups):
-        start, end = day_bounds(day)
-        cutoff = min(start, now)
-        samples = defaultdict(list)
-        for row in genuine.values():
-            stamp = row[1].astimezone(UTC)
-            if (row[0] == zone and row[3] == resolution
-                    and cutoff - timedelta(days=21) <= stamp < cutoff):
-                samples[(stamp.hour, stamp.minute)].append(Decimal(str(row[4])))
-        for stamp in grid(start, end, STEPS[resolution]):
-            key = (zone, stamp, resolution)
-            if key in result:
+    resolutions = {r[3] for r in records if isinstance(r, (tuple, list)) and len(r) == 7 and r[3] in STEPS}
+    if not resolutions:
+        events.append(event("range_unfilled_no_resolution", {"start": start, "end": end}))
+    for resolution in sorted(resolutions):
+        step = STEPS[resolution]
+        slots = list(grid(start, end, step))
+        i = 0
+        while i < len(slots):
+            if (zone, slots[i], resolution) in originals:
+                i += 1
                 continue
-            if key in genuine:
-                result[key] = genuine[key] + (None,)
-                continue
-            values = samples[(stamp.hour, stamp.minute)]
-            payload = {"zone": zone, "period_start": stamp, "resolution": resolution,
-                       "sample_count": len(values), "history_end": cutoff}
-            if values:
-                value = median(values).quantize(Decimal("0.01"))
-                result[key] = (zone, stamp, stamp + STEPS[resolution], resolution,
-                               value, "EUR", "MWH", "median_21d")
-                events.append(event("gap_filled_median_21d", payload))
-            else:
-                events.append(event("gap_unfilled_no_history", payload))
+            first = i
+            while i < len(slots) and (zone, slots[i], resolution) not in originals:
+                i += 1
+            left = originals.get((zone, slots[first - 1], resolution)) if first else None
+            right = originals.get((zone, slots[i], resolution)) if i < len(slots) else None
+            gap = slots[first:i]
+            fill = left is not None and right is not None and len(gap) * step <= timedelta(hours=1)
+            value = ((Decimal(str(left[4])) + Decimal(str(right[4]))) / 2).quantize(Decimal("0.01")) if fill else None
+            for stamp in gap:
+                payload = {"zone": zone, "period_start": stamp, "resolution": resolution, "gap_intervals": len(gap)}
+                if fill:
+                    result[(zone, stamp, resolution)] = (zone, stamp, stamp + step, resolution, value, "EUR", "MWH", "boundary_mean")
+                    events.append(event("gap_filled_boundary_mean", payload))
+                else:
+                    events.append(event("gap_unfilled", payload))
     return list(result.values()), events
 
 
@@ -165,22 +151,16 @@ def write_events(cur, source, entity, events):
     )
 
 
-def save_checked_prices(conn, zone, records):
-    now = datetime.now(timezone.utc)
-    stamps = [r[1] for r in records if isinstance(r, (list, tuple)) and len(r) == 7
-              and isinstance(r[1], datetime) and r[1].utcoffset() is not None]
+def save_checked_prices(conn, zone, records, start, end):
     with conn.transaction(), conn.cursor() as cur:
-        history = []
-        if stamps:
-            cur.execute(
-                """SELECT bidding_zone, period_start, period_end, resolution, price, currency, price_unit
-                   FROM entsoe_day_ahead_prices
-                   WHERE bidding_zone = %s AND imputation_method IS NULL
-                     AND period_start >= %s AND period_start < %s""",
-                (zone, min(stamps) - timedelta(days=22), max(stamps) + timedelta(days=1)),
-            )
-            history = cur.fetchall()
-        rows, events = prepare_prices(records, history, now)
+        cur.execute(
+            """SELECT bidding_zone, period_start, period_end, resolution, price, currency, price_unit
+               FROM entsoe_day_ahead_prices
+               WHERE bidding_zone = %s AND imputation_method IS NULL
+                 AND period_start >= %s AND period_start < %s""",
+            (zone, start, end))
+        history = cur.fetchall()
+        rows, events = prepare_prices(records, zone, start, end, history)
         write_events(cur, "prices", zone, events)
         cur.executemany(
             """INSERT INTO entsoe_day_ahead_prices
@@ -223,11 +203,10 @@ def run_pipeline(start_date: Optional[date] = None, end_date: Optional[date] = N
                     )
                     if not records:
                         print("  Цены за период ещё не опубликованы")
-                    else:
-                        count, issues = save_checked_prices(conn, zone, records)
-                        print(f"  DQ: {issues} событий в журнале")
-                        print(f"✓ Успешно сохранено/обновлено {count} интервалов для {zone}")
-                        total_saved += count
+                    count, issues = save_checked_prices(conn, zone, records, _market_midnight(chunk_start).astimezone(UTC), _market_midnight(chunk_end + timedelta(days=1)).astimezone(UTC))
+                    print(f"  DQ: {issues} событий в журнале")
+                    print(f"✓ Успешно сохранено/обновлено {count} интервалов для {zone}")
+                    total_saved += count
                 except Exception as e:
                     # Ошибка одной зоны не ломает сбор для остальных
                     print(f"✗ Ошибка при обработке {zone}: {e}", file=sys.stderr)
