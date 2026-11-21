@@ -1,208 +1,87 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>EcoGrid Flow</title>
-    <link rel="stylesheet" href="style.css">
-
-  
+    <title>EcoGrid Flow — рекомендации</title>
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
-
 <body>
-
-    <!-- Шапка -->
     <header class="header">
-        <div class="logo">
-            EcoGrid <span class="caligraf"> Flow </span>
-        </div>
-
-        <nav class="navigation">
-            <a href="#">Главная</a>
-            <a href="#">Аналитика</a>
-            <a href="#">Карта ЦОД</a>
+        <div class="logo">EcoGrid <span>Flow</span></div>
+        <nav class="navigation" aria-label="Основная навигация">
+            <a class="active" href="#calculator">Расчёт</a>
+            <a href="#results">Результат</a>
         </nav>
     </header>
-    
 
-
-    <!-- Основная часть страницы -->
-    <main class="main">
-
-        <!-- Форма создания задачи -->
-        <section class="task-form-container">
-
+    <main class="main" id="calculator">
+        <section class="glass-card form-card">
             <h1>Параметры задачи</h1>
+            <p class="description">Укажите параметры вычислительной задачи</p>
 
-            <p class="description">
-                Укажите параметры вычислительной задачи
-            </p>
-
-
-            <form id="taskForm">
-
-                <!-- Название задачи -->
+            <form id="taskForm" novalidate>
                 <div class="form-group">
-
-                    <label for="taskName">
-                        Название задачи
-                    </label>
-
-                    <input
-                        type="text"
-                        id="taskName"
-                        name="taskName"
-                        placeholder="Например: Обучение ML-модели"
-                        required
-                    >
-
+                    <label for="taskName">Название задачи</label>
+                    <input id="taskName" name="task_name" type="text" placeholder="Например: Обучение ML-модели" required>
                 </div>
-
-
-                <!-- Длительность и дедлайн -->
                 <div class="form-row">
-
                     <div class="form-group">
-
-                        <label for="duration">
-                            Длительность вычислений, часы
-                        </label>
-
-                        <input
-                            type="number"
-                            id="duration"
-                            name="duration"
-                            min="1"
-                            placeholder="24"
-                            required
-                        >
-
+                        <label for="duration">Длительность вычислений, часы</label>
+                        <input id="duration" name="duration_hours" type="number" min="1" placeholder="24" required>
                     </div>
-
-
                     <div class="form-group">
-
-                        <label for="deadline">
-                            Дедлайн выполнения (UTC)
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            id="deadline"
-                            name="deadline"
-                            required
-                        >
-
+                        <label for="deadline">Дедлайн выполнения (UTC)</label>
+                        <input id="deadline" name="deadline" type="datetime-local" required>
                     </div>
-
                 </div>
-
-
-                <!-- Мощность -->
                 <div class="form-group">
-
-                    <label for="power">
-                        Потребляемая мощность серверов, кВт
-                    </label>
-
-                    <input
-                        type="number"
-                        id="power"
-                        name="power"
-                        min="0"
-                        step="1"
-                        placeholder="10"
-                        required
-                    >
-
+                    <label for="power">Потребляемая мощность серверов, кВт</label>
+                    <input id="power" name="required_power_kw" type="number" min="0.1" step="0.1" placeholder="10" required>
                 </div>
-
-
-                <!-- Регионы -->
-                <div class="form-group">
-
-                    <p class="regions-title">
-                        Доступные регионы / ЦОД
-                    </p>
-
-
-                    <div class="regions">
-
-                        <label class="region">
-
-                            <input
-                                type="checkbox"
-                                name="regions"
-                                value="FI"
-                            >
-
-                            Финляндия
-
-                        </label>
-
-
-                        <label class="region">
-
-                            <input
-                                type="checkbox"
-                                name="regions"
-                                value="SE"
-                            >
-
-                            Швеция
-
-                        </label>
-
-
-                        <label class="region">
-
-                            <input
-                                type="checkbox"
-                                name="regions"
-                                value="DE"
-                            >
-
-                            Германия
-
-                        </label>
-
+                <fieldset class="form-group zones-group">
+                    <legend>Доступные регионы / ЦОД</legend>
+                    <div class="zones">
+                        <label class="zone"><input type="checkbox" name="allowed_zones" value="FI"> Финляндия</label>
+                        <label class="zone"><input type="checkbox" name="allowed_zones" value="SE3"> Швеция</label>
+                        <label class="zone"><input type="checkbox" name="allowed_zones" value="DE-LU"> Германия</label>
                     </div>
-
-                </div>
-
-
-                <!-- Кнопка -->
-                <button type="submit" class="submit-button">
-
-                    Рассчитать оптимальное окно
-
-                </button>
-
+                </fieldset>
+                <div id="formError" class="form-error" role="alert" hidden></div>
+                <button class="submit-button" type="submit">Рассчитать оптимальное окно</button>
             </form>
-
         </section>
 
-
-        <!-- Место для будущего графика -->
-        <section class="content-placeholder">
-
-            <h2>
-                Оптимизация вычислений
-            </h2>
-
-            <p>
-                Здесь позже будет отображаться график стоимости
-                электроэнергии и результаты расчёта.
-            </p>
-
+        <section class="results" id="results" aria-live="polite">
+            <div class="glass-card empty-state" id="emptyState">
+                <p class="eyebrow">Экран результата</p>
+                <h2>Здесь появится рекомендация</h2>
+                <p>Заполните параметры задачи и нажмите кнопку расчёта.</p>
+            </div>
+            <div id="resultContent" hidden>
+                <div class="results-heading">
+                    <div>
+                        <p class="eyebrow">FR-API-03 · мок-контракт</p>
+                        <h2>Результат расчёта</h2>
+                    </div>
+                    <span class="status-badge" id="resultStatus"></span>
+                </div>
+                <div id="recommendations" class="recommendations"></div>
+                <section class="glass-card chart-card">
+                    <div class="chart-heading">
+                        <div><h3>Стоимость по часам</h3><p id="chartCaption"></p></div>
+                        <div class="legend"><span></span> EUR/MWh</div>
+                    </div>
+                    <div id="costChart" class="cost-chart" role="img" aria-label="Почасовой график стоимости"></div>
+                </section>
+                <details class="glass-card debug-card">
+                    <summary>Показать мок-ответ API</summary>
+                    <pre id="mockJson"></pre>
+                </details>
+            </div>
         </section>
-
     </main>
-
-
-    <!-- Подключение JavaScript -->
+    <script src="mock-api.js"></script>
     <script src="script.js"></script>
-
 </body>
 </html>
