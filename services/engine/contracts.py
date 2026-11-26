@@ -101,6 +101,8 @@ class EngineRequest(EngineModel):
 
     @model_validator(mode="after")
     def validate_request_window(self) -> "EngineRequest":
+        if self.baseline_start.second or self.baseline_start.microsecond:
+            raise ValueError("baseline_start must have minute precision")
         latest_start = self.deadline - timedelta(minutes=self.duration_minutes)
         if self.deadline < self.earliest_start + timedelta(minutes=self.duration_minutes):
             raise ValueError("deadline must leave enough time for the task")

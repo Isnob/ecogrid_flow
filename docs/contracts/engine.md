@@ -83,7 +83,8 @@
 ```python
 from datetime import datetime, timezone
 
-from services.engine.contracts import EngineRequest, recommend
+from services.engine import recommend
+from services.engine.contracts import EngineRequest
 
 request = EngineRequest(
     job_id="job-123",
@@ -118,7 +119,7 @@ request = EngineRequest(
     ],
 )
 
-response = recommend(request)  # реализация появится в следующей задаче
+response = recommend(request)
 ```
 
 Для отсутствия подтвержденного окна API проверяет
