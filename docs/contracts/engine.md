@@ -98,7 +98,7 @@ request = EngineRequest(
     ],
 )
 
-response = recommend(request)  # реализация появится в следующей задаче
+response = recommend(request)
 ```
 
 Для отсутствия подтвержденного окна API проверяет
