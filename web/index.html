@@ -1,209 +1,108 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>EcoGrid Flow</title>
-    <link rel="stylesheet" href="style.css">
-
-  
+    <title>EcoGrid Flow — рекомендации</title>
+    <link rel="stylesheet" href="style.css?v=8">
 </head>
-
 <body>
-
-    <!-- Шапка -->
     <header class="header">
-        <div class="logo">
-            EcoGrid <span class="caligraf"> Flow </span>
-        </div>
-
-        <nav class="navigation">
-            <a href="#">Главная</a>
-            <a href="#">Аналитика</a>
-            <a href="#">Карта ЦОД</a>
+        <div class="logo">EcoGrid <span>Flow</span></div>
+        <nav class="navigation" aria-label="Основная навигация">
+            <a class="active" href="#calculator">Расчёт</a>
+            <a href="#results">Результат</a>
         </nav>
     </header>
-    
 
-
-    <!-- Основная часть страницы -->
-    <main class="main">
-
-        <!-- Форма создания задачи -->
-        <section class="task-form-container">
-
+    <main class="main" id="calculator">
+        <section class="glass-card form-card">
             <h1>Параметры задачи</h1>
+            <p class="description">Укажите параметры вычислительной задачи</p>
 
-            <p class="description">
-                Прототип формы. Расчёт станет доступен после подключения сервиса рекомендаций.
-            </p>
-
-
-            <form id="taskForm">
-
-                <!-- Идентификатор задачи -->
+            <form id="taskForm" novalidate>
                 <div class="form-group">
-
-                    <label for="job_id">
-                        Идентификатор задачи
-                    </label>
-
-                    <input
-                        type="text"
-                        id="job_id"
-                        name="job_id"
-                        placeholder="Например: training-001"
-                        maxlength="100"
-                        required
-                    >
-
+                    <label for="taskName">Название задачи</label>
+                    <input id="taskName" name="task_name" type="text" placeholder="Например: Обучение ML-модели" required>
                 </div>
-
-
-                <!-- Длительность и дедлайн -->
                 <div class="form-row">
-
                     <div class="form-group">
-
-                        <label for="duration">
-                            Длительность вычислений, минуты
-                        </label>
-
-                        <input
-                            type="number"
-                            id="duration"
-                            name="duration_minutes"
-                            min="1"
-                            placeholder="90"
-                            step="1"
-                            required
-                        >
-
+                        <label for="duration">Длительность вычислений, часы</label>
+                        <input id="duration" name="duration_hours" type="number" min="1" placeholder="24" required>
                     </div>
-
-
                     <div class="form-group">
-
-                        <label for="deadline">
-                            Дедлайн выполнения (UTC)
-                        </label>
-
-                        <input
-                            type="datetime-local"
-                            id="deadline"
-                            name="deadline"
-                            required
-                        >
-
+                        <label for="deadline">Дедлайн выполнения (UTC)</label>
+                        <input id="deadline" name="deadline" type="datetime-local" required>
                     </div>
-
                 </div>
-
-
-                <!-- Мощность -->
                 <div class="form-group">
-
-                    <label for="power">
-                        Потребляемая мощность серверов, кВт
-                    </label>
-
-                    <input
-                        type="number"
-                        id="power"
-                        name="required_power_kw"
-                        min="0.01"
-                        step="any"
-                        placeholder="10"
-                        required
-                    >
-
+                    <label for="power">Суммарная мощность оборудования для задачи, кВт</label>
+                    <input id="power" name="required_power_kw" type="number" min="0.1" step="0.1" placeholder="10" required>
                 </div>
-
-
-                <!-- Регионы -->
-                <div class="form-group">
-
-                    <p class="regions-title">
-                        Доступные регионы / ЦОД
-                    </p>
-
-
-                    <div class="regions">
-
-                        <label class="region">
-
-                            <input
-                                type="checkbox"
-                                name="allowed_zones"
-                                value="FI"
-                            >
-
-                            Финляндия
-
-                        </label>
-
-
-                        <label class="region">
-
-                            <input
-                                type="checkbox"
-                                name="allowed_zones"
-                                value="SE3"
-                            >
-
-                            Швеция
-
-                        </label>
-
-
-                        <label class="region">
-
-                            <input
-                                type="checkbox"
-                                name="allowed_zones"
-                                value="DE-LU"
-                            >
-
-                            Германия
-
-                        </label>
-
+                <fieldset class="form-group zones-group">
+                    <legend>Доступные регионы / ЦОД</legend>
+                    <div class="zones">
+                        <label class="zone"><input type="checkbox" name="allowed_zones" value="FI"> Финляндия</label>
+                        <label class="zone"><input type="checkbox" name="allowed_zones" value="SE3"> Швеция</label>
+                        <label class="zone"><input type="checkbox" name="allowed_zones" value="DE-LU"> Германия</label>
                     </div>
-
-                </div>
-
-
-                <!-- Кнопка -->
-                <button type="button" class="submit-button" disabled>
-
-                    Расчёт пока недоступен
-
-                </button>
-
+                </fieldset>
+                <div id="formError" class="form-error" role="alert" hidden></div>
+                <button class="submit-button" type="submit">Рассчитать оптимальное окно</button>
             </form>
-
         </section>
 
-
-        <!-- Место для будущего графика -->
-        <section class="content-placeholder">
-
-            <h2>
-                Оптимизация вычислений
-            </h2>
-
-            <p>
-                Здесь позже будет отображаться график стоимости
-                электроэнергии и результаты расчёта.
-            </p>
-
+        <section class="results" id="results" aria-live="polite">
+            <div class="glass-card empty-state" id="emptyState">
+                <p class="eyebrow">Экран результата</p>
+                <h2>Здесь появится рекомендация</h2>
+                <p>Заполните параметры задачи и нажмите кнопку расчёта.</p>
+            </div>
+            <div id="resultContent" hidden>
+                <div class="results-heading">
+                    <div>
+                        <p class="eyebrow">Оптимизация расписания</p>
+                        <h2>Результат расчёта</h2>
+                    </div>
+                    <span class="status-badge" id="resultStatus"></span>
+                </div>
+                <div id="recommendations" class="recommendations"></div>
+                <section class="glass-card chart-card">
+                    <div class="chart-heading">
+                        <div><h3>Стоимость на всём доступном интервале</h3><p id="chartCaption"></p></div>
+                        <span class="window-legend"><i></i>Самое выгодное окно</span>
+                    </div>
+                    <div class="chart-controls-panel" aria-label="Настройки графика">
+                        <div class="series-control-group">
+                            <div class="control-heading">
+                                <span>ЦОД на графике</span>
+                                <button id="chartShowAll" class="text-button" type="button">Показать все</button>
+                            </div>
+                            <div id="chartSeriesControls" class="series-controls"></div>
+                        </div>
+                        <div class="time-control-group">
+                            <label for="chartRange">Период</label>
+                            <select id="chartRange">
+                                <option value="all">Весь период</option>
+                                <option value="168">7 дней</option>
+                                <option value="48">48 часов</option>
+                                <option value="24">24 часа</option>
+                            </select>
+                            <button id="chartPrevious" type="button">Раньше</button>
+                            <button id="chartNext" type="button">Позже</button>
+                        </div>
+                        <span id="chartWindowLabel" class="chart-window-label"></span>
+                    </div>
+                    <div id="costChart" class="cost-chart" role="img" aria-label="Почасовой график стоимости за весь период до дедлайна"></div>
+                </section>
+                <details class="glass-card debug-card">
+                    <summary>Показать мок-ответ API</summary>
+                    <pre id="mockJson"></pre>
+                </details>
+            </div>
         </section>
-
     </main>
-
-
-    <!-- Подключение к API будет добавлено вместе с обработчиком рекомендаций. -->
-
+    <script src="mock-api.js?v=6"></script>
+    <script src="script.js?v=7"></script>
 </body>
 </html>
