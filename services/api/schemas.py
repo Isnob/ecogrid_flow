@@ -120,7 +120,6 @@ class SearchTimelineHour(ApiModel):
     timestamp: UtcDateTime
     price_eur_per_mwh: float
     temperature_c: float | None
-    pue: float = Field(ge=1)
     price_is_estimated: StrictBool
 
     @field_validator("timestamp")
