@@ -7,6 +7,7 @@ The API prepares hourly rows and calls :func:`recommend`.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from math import isclose
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -15,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 class EngineModel(BaseModel):
     """Base model with a strict JSON contract."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
 
     @field_validator(
         "timestamp",
@@ -129,13 +130,22 @@ class HourCost(EngineModel):
 class Recommendation(EngineModel):
     """One confirmed or estimated execution option."""
 
-    recommendation_id: Optional[str] = Field(
+    recommendation_id: Optional[int] = Field(
         default=None,
-        description="Assigned by API/DB after the engine result is persisted.",
+        gt=0,
+        strict=True,
+        description="Assigned by API/DB (BIGSERIAL) after the engine result is persisted.",
     )
     target_datacenter: str
     recommended_start: datetime
     recommended_end: datetime
+    estimated_energy_kwh: float = Field(
+        gt=0.0,
+        description=(
+            "Total energy consumption of the selected window in kWh "
+            "(power * PUE * hours), persisted to recommendations.estimated_energy_kwh."
+        ),
+    )
     estimated_cost_eur: float
     baseline_cost_eur: float
     estimated_savings_eur: float
@@ -164,8 +174,28 @@ class Recommendation(EngineModel):
             raise ValueError("estimated_savings_percent must be null when baseline is zero")
         if self.baseline_cost_eur != 0 and self.estimated_savings_percent is None:
             raise ValueError("estimated_savings_percent is required when baseline is non-zero")
-        if self.recommended_start.minute or self.recommended_start.second:
+        if not isclose(
+            self.estimated_savings_eur,
+            self.baseline_cost_eur - self.estimated_cost_eur,
+            rel_tol=1e-8,
+            abs_tol=1e-4,
+        ):
+            raise ValueError("estimated_savings_eur must equal baseline_cost_eur - estimated_cost_eur")
+        if self.baseline_cost_eur != 0 and not isclose(
+            self.estimated_savings_percent,
+            self.estimated_savings_eur / self.baseline_cost_eur * 100,
+            rel_tol=1e-8,
+            abs_tol=1e-4,
+        ):
+            raise ValueError("estimated_savings_percent does not match the cost ratio")
+        if (
+            self.recommended_start.minute
+            or self.recommended_start.second
+            or self.recommended_start.microsecond
+        ):
             raise ValueError("recommended_start must be aligned to the start of an hour")
+        if self.recommended_end.second or self.recommended_end.microsecond:
+            raise ValueError("recommended_end must have minute precision")
         if self.recommended_end <= self.recommended_start:
             raise ValueError("recommended_end must be after recommended_start")
 
@@ -183,6 +213,13 @@ class Recommendation(EngineModel):
             remaining_minutes -= expected_minutes
         if remaining_minutes != 0:
             raise ValueError("hourly_costs must cover the complete selected interval")
+        if not isclose(
+            self.estimated_cost_eur,
+            sum(hour.cost_eur for hour in self.hourly_costs),
+            rel_tol=1e-8,
+            abs_tol=1e-4 * len(self.hourly_costs),
+        ):
+            raise ValueError("estimated_cost_eur must equal the sum of hourly_costs")
         return self
 
 
@@ -203,6 +240,9 @@ class EngineResponse(EngineModel):
             )
         if self.reason == "data_unavailable" and self.recommendations:
             raise ValueError("data_unavailable response must not contain recommendations")
+        flags = [recommendation.is_fallback for recommendation in self.recommendations]
+        if len(flags) != len(set(flags)):
+            raise ValueError("at most one confirmed and one estimated recommendation are allowed")
         has_confirmed_recommendation = any(
             not recommendation.is_fallback for recommendation in self.recommendations
         )
@@ -213,6 +253,12 @@ class EngineResponse(EngineModel):
                 )
         elif has_confirmed_recommendation and self.reason is not None:
             raise ValueError("reason must be null when a confirmed recommendation exists")
+        if self.reason == "no_confirmed_window" and not any(
+            hour.price_is_estimated
+            for recommendation in self.recommendations
+            for hour in recommendation.hourly_costs
+        ):
+            raise ValueError("no_confirmed_window requires an estimated price in the selected window")
         return self
 
 
