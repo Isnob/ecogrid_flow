@@ -114,6 +114,37 @@ class HourlyCost(ApiModel):
         return value
 
 
+class SearchTimelineHour(ApiModel):
+    """One hourly point from the full interval searched by the optimizer."""
+
+    timestamp: UtcDateTime
+    price_eur_per_mwh: float
+    temperature_c: float | None
+    pue: float = Field(ge=1)
+    price_is_estimated: StrictBool
+
+    @field_validator("timestamp")
+    @classmethod
+    def validate_hour_start(cls, value: datetime) -> datetime:
+        if not _whole_hour(value):
+            raise ValueError("timestamp must be the start of a UTC hour")
+        return value
+
+
+class SearchTimeline(ApiModel):
+    """Complete candidate series shown by the web chart for one datacenter."""
+
+    target_datacenter: NonEmptyString
+    hours: list[SearchTimelineHour] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def validate_hours(self) -> SearchTimeline:
+        for index, point in enumerate(self.hours[1:], start=1):
+            if point.timestamp != self.hours[0].timestamp + timedelta(hours=index):
+                raise ValueError("search_timeline.hours must contain consecutive UTC hours in order")
+        return self
+
+
 class Recommendation(ApiModel):
     recommendation_id: int = Field(gt=0, strict=True)
     target_datacenter: NonEmptyString
@@ -180,6 +211,7 @@ class RecommendationResponse(ApiModel):
     job_id: NonEmptyString
     recommendations: list[Recommendation] = Field(min_length=1, max_length=2)
     reason: NoPrimaryReason | None = None
+    search_timelines: list[SearchTimeline] = Field(min_length=1)
 
     @model_validator(mode="after")
     def validate_recommendation_set(self) -> RecommendationResponse:
@@ -197,6 +229,19 @@ class RecommendationResponse(ApiModel):
             for point in recommendation.hourly_costs
         ):
             raise ValueError("no_confirmed_window requires an estimated price in the selected window")
+        timeline_by_datacenter = {
+            timeline.target_datacenter: timeline for timeline in self.search_timelines
+        }
+        if len(timeline_by_datacenter) != len(self.search_timelines):
+            raise ValueError("search_timelines must contain unique datacenters")
+        for item in self.recommendations:
+            timeline = timeline_by_datacenter.get(item.target_datacenter)
+            if timeline is None:
+                raise ValueError("search_timelines must include every recommended datacenter")
+            timeline_start = timeline.hours[0].timestamp
+            timeline_end = timeline.hours[-1].timestamp + timedelta(hours=1)
+            if not timeline_start <= item.recommended_start or item.recommended_end > timeline_end:
+                raise ValueError("search timeline must cover its recommendation interval")
         return self
 
 
