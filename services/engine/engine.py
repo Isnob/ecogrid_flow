@@ -25,6 +25,7 @@ class _Window:
     datacenter: DatacenterInput
     start: datetime
     hours: tuple[HourInput, ...]
+    minutes: tuple[int, ...]
     uses_estimated_price: bool
     cost_eur: float
 
@@ -43,29 +44,55 @@ def _duration_hours(duration_minutes: int) -> int:
     return (duration_minutes + 59) // 60
 
 
-def _minutes_for_hour(duration_minutes: int, index: int) -> int:
-    remaining = duration_minutes - index * 60
-    return min(60, remaining)
+def _first_hour(timestamp: datetime) -> datetime:
+    return timestamp.replace(minute=0, second=0, microsecond=0)
 
 
-def _cost_for_hours(
+def _candidate_start(timestamp: datetime) -> datetime:
+    hour = _first_hour(timestamp)
+    return hour if timestamp == hour else hour + timedelta(hours=1)
+
+
+def _interval_rows(
+    datacenter: DatacenterInput,
+    start: datetime,
+    duration_minutes: int,
+) -> tuple[tuple[HourInput, ...], tuple[int, ...]] | None:
+    """Return source hours and occupied minutes for an arbitrary start."""
+
+    by_timestamp = {hour.timestamp: hour for hour in datacenter.hours}
+    end = start + timedelta(minutes=duration_minutes)
+    hour_start = _first_hour(start)
+    selected: list[HourInput] = []
+    minutes: list[int] = []
+    while hour_start < end:
+        hour_end = hour_start + timedelta(hours=1)
+        overlap_start = max(start, hour_start)
+        overlap_end = min(end, hour_end)
+        occupied_minutes = int((overlap_end - overlap_start).total_seconds() / 60)
+        hour = by_timestamp.get(hour_start)
+        if hour is None or occupied_minutes <= 0:
+            return None
+        selected.append(hour)
+        minutes.append(occupied_minutes)
+        hour_start = hour_end
+    return tuple(selected), tuple(minutes)
+
+
+def _cost_for_interval(
     datacenter: DatacenterInput,
     hours: tuple[HourInput, ...],
-    duration_minutes: int,
+    minutes: tuple[int, ...],
     required_power_kw: float,
 ) -> float:
-    total = 0.0
-    for index, hour in enumerate(hours):
-        minutes = _minutes_for_hour(duration_minutes, index)
-        pue = _pue(datacenter.base_pue, hour.temperature_c)
-        total += (
-            required_power_kw
-            * pue
-            * (minutes / 60)
-            * hour.price_eur_per_mwh
-            * EUR_PER_MWH_TO_EUR_PER_KWH
-        )
-    return total
+    return sum(
+        required_power_kw
+        * _pue(datacenter.base_pue, hour.temperature_c)
+        * (occupied_minutes / 60)
+        * hour.price_eur_per_mwh
+        * EUR_PER_MWH_TO_EUR_PER_KWH
+        for hour, occupied_minutes in zip(hours, minutes)
+    )
 
 
 def _hour_cost_for_required_power(
@@ -88,24 +115,20 @@ def _window_at(
     duration_minutes: int,
     required_power_kw: float,
 ) -> _Window | None:
-    by_timestamp = {hour.timestamp: hour for hour in datacenter.hours}
-    hours_count = _duration_hours(duration_minutes)
-    selected: list[HourInput] = []
-    for index in range(hours_count):
-        hour = by_timestamp.get(start + timedelta(hours=index))
-        if hour is None:
-            return None
-        selected.append(hour)
-    selected_tuple = tuple(selected)
+    rows = _interval_rows(datacenter, start, duration_minutes)
+    if rows is None:
+        return None
+    selected_tuple, minutes = rows
     return _Window(
         datacenter=datacenter,
         start=start,
         hours=selected_tuple,
+        minutes=minutes,
         uses_estimated_price=any(hour.price_is_estimated for hour in selected_tuple),
-        cost_eur=_cost_for_hours(
+        cost_eur=_cost_for_interval(
             datacenter,
             selected_tuple,
-            duration_minutes,
+            minutes,
             required_power_kw,
         ),
     )
@@ -145,7 +168,7 @@ def _candidate_windows(
 
         full_hours, partial_minutes = divmod(request.duration_minutes, 60)
         hours_count = _duration_hours(request.duration_minutes)
-        start = request.earliest_start
+        start = _candidate_start(request.earliest_start)
         while start <= latest_start:
             start_index = by_timestamp.get(start)
             if start_index is not None and start_index + hours_count <= len(
@@ -166,6 +189,10 @@ def _candidate_windows(
                             datacenter=datacenter,
                             start=start,
                             hours=tuple(datacenter.hours[start_index:end_index]),
+                            minutes=tuple(
+                                [60] * full_hours
+                                + ([partial_minutes] if partial_minutes else [])
+                            ),
                             uses_estimated_price=uses_estimated,
                             cost_eur=cost,
                         )
@@ -219,14 +246,14 @@ def _recommendation(
     hourly_costs = [
         HourCost(
             timestamp=hour.timestamp,
-            minutes=_minutes_for_hour(request.duration_minutes, index),
+            minutes=window.minutes[index],
             price_eur_per_mwh=hour.price_eur_per_mwh,
             temperature_c=hour.temperature_c,
             pue=_pue(window.datacenter.base_pue, hour.temperature_c),
             cost_eur=(
                 request.required_power_kw
                 * _pue(window.datacenter.base_pue, hour.temperature_c)
-                * (_minutes_for_hour(request.duration_minutes, index) / 60)
+                * (window.minutes[index] / 60)
                 * hour.price_eur_per_mwh
                 * EUR_PER_MWH_TO_EUR_PER_KWH
             ),
@@ -234,10 +261,17 @@ def _recommendation(
         )
         for index, hour in enumerate(window.hours)
     ]
+    estimated_energy_kwh = sum(
+        request.required_power_kw
+        * _pue(window.datacenter.base_pue, hour.temperature_c)
+        * (occupied_minutes / 60)
+        for hour, occupied_minutes in zip(window.hours, window.minutes)
+    )
     return Recommendation(
         target_datacenter=window.datacenter.datacenter_id,
         recommended_start=window.start,
         recommended_end=end,
+        estimated_energy_kwh=estimated_energy_kwh,
         estimated_cost_eur=window.cost_eur,
         baseline_cost_eur=baseline_cost,
         estimated_savings_eur=savings,

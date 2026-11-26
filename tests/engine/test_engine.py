@@ -36,11 +36,12 @@ def _datacenter(datacenter_id, prices, *, max_power_kw=500, **kwargs):
 
 
 def _request(datacenters, *, duration_minutes=60, deadline_hours=3, **kwargs):
+    earliest_start = kwargs.pop("earliest_start", START)
     return EngineRequest(
         job_id="job-1",
         duration_minutes=duration_minutes,
         required_power_kw=100,
-        earliest_start=START,
+        earliest_start=earliest_start,
         deadline=START + timedelta(hours=deadline_hours),
         allowed_zones=[datacenter["zone"] for datacenter in datacenters],
         datacenters=datacenters,
@@ -72,6 +73,7 @@ def test_recommends_cheapest_window_and_prices_for_partial_last_hour():
     assert recommendation.baseline_cost_eur == pytest.approx(7.2)
     assert recommendation.estimated_savings_eur == pytest.approx(0.6)
     assert recommendation.estimated_savings_percent == pytest.approx(8.3333333)
+    assert recommendation.estimated_energy_kwh == pytest.approx(180.0)
     assert recommendation.is_fallback is False
 
 
@@ -101,6 +103,25 @@ def test_dynamic_pue_is_used_for_warm_hours():
     # PUE = 1.2 + 0.008 * (20 - 10) = 1.28.
     assert response.recommendations[0].hourly_costs[0].pue == pytest.approx(1.28)
     assert response.recommendations[0].estimated_cost_eur == pytest.approx(12.8)
+    assert response.recommendations[0].estimated_energy_kwh == pytest.approx(128.0)
+
+
+def test_mid_hour_earliest_start_moves_candidate_to_next_full_hour():
+    mid_hour = START + timedelta(minutes=30)
+    request = _request(
+        [_datacenter("FI-1", [100, 10, 100])],
+        deadline_hours=2,
+        earliest_start=mid_hour,
+        baseline_start=mid_hour,
+    )
+
+    response = recommend(request)
+
+    recommendation = response.recommendations[0]
+    assert recommendation.recommended_start == START + timedelta(hours=1)
+    assert recommendation.recommended_end == START + timedelta(hours=2)
+    assert recommendation.baseline_cost_eur == pytest.approx(6.6)
+    assert recommendation.estimated_cost_eur == pytest.approx(1.2)
 
 
 def test_negative_price_and_zero_baseline_keep_percent_null():

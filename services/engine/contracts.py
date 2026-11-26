@@ -101,12 +101,6 @@ class EngineRequest(EngineModel):
 
     @model_validator(mode="after")
     def validate_request_window(self) -> "EngineRequest":
-        for name, value in (
-            ("earliest_start", self.earliest_start),
-            ("baseline_start", self.baseline_start),
-        ):
-            if value.minute or value.second or value.microsecond:
-                raise ValueError(f"{name} must be aligned to the start of an hour")
         latest_start = self.deadline - timedelta(minutes=self.duration_minutes)
         if self.deadline < self.earliest_start + timedelta(minutes=self.duration_minutes):
             raise ValueError("deadline must leave enough time for the task")
