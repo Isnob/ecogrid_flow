@@ -24,6 +24,11 @@ assert.deepEqual(response.search_timelines.map(item => item.target_datacenter), 
 ]);
 assert.ok(response.search_timelines.every(item => item.hours.length === 24));
 assert.equal(response.search_timelines[0].hours[0].timestamp, '2026-11-22T10:00:00.000Z');
+assert.deepEqual(
+    Object.keys(response.search_timelines[0].hours[0]).sort(),
+    ['price_eur_per_mwh', 'price_is_estimated', 'temperature_c', 'timestamp']
+);
+assert.equal(typeof response.recommendations[0].hourly_costs[0].pue, 'number');
 assert.ok(new Date(response.search_timelines[0].hours.at(-1).timestamp) < new Date('2026-11-23T10:00:00.000Z'));
 assert.equal(response.recommendations[0].hourly_costs.length, 3);
 assert.ok(new Date(response.recommendations[0].recommended_start) >= new Date(response.search_timelines[0].hours[0].timestamp));

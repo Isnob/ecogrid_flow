@@ -113,7 +113,15 @@
                 hourly_costs: hourlyCosts
             }],
             reason: null,
-            search_timelines: searchTimelines
+            search_timelines: searchTimelines.map(({target_datacenter, hours}) => ({
+                target_datacenter,
+                hours: hours.map(({timestamp, price_eur_per_mwh, temperature_c, price_is_estimated}) => ({
+                    timestamp,
+                    price_eur_per_mwh,
+                    temperature_c,
+                    price_is_estimated
+                }))
+            }))
         };
     }
 

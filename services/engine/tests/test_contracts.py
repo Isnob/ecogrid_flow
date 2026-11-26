@@ -241,46 +241,119 @@ def test_api_schemas_validate_request_response_and_error() -> None:
             },
         )
 
-    resp = RecommendationResponse.model_validate(
-        {
-            "job_id": "job-123",
-            "recommendations": [
-                {
-                    "recommendation_id": 101,
-                    "target_datacenter": "FI-HELSINKI-01",
-                    "recommended_start": "2026-11-03T11:00:00Z",
-                    "recommended_end": "2026-11-03T13:00:00Z",
-                    "estimated_cost_eur": 8.51,
-                    "baseline_cost_eur": 9.3725,
-                    "estimated_savings_eur": 0.8625,
-                    "estimated_savings_percent": 9.20245,
-                    "is_fallback": False,
-                    "hourly_costs": [
-                        {
-                            "timestamp": "2026-11-03T11:00:00Z",
-                            "minutes": 60,
-                            "price_eur_per_mwh": 39,
-                            "temperature_c": 4.5,
-                            "pue": 1.15,
-                            "cost_eur": 4.485,
-                            "price_is_estimated": False,
-                        },
-                        {
-                            "timestamp": "2026-11-03T12:00:00Z",
-                            "minutes": 60,
-                            "price_eur_per_mwh": 35,
-                            "temperature_c": 5.0,
-                            "pue": 1.15,
-                            "cost_eur": 4.025,
-                            "price_is_estimated": False,
-                        },
-                    ],
-                },
-            ],
-            "reason": None,
-        },
-    )
+    valid_response_payload = {
+        "job_id": "job-123",
+        "recommendations": [
+            {
+                "recommendation_id": 101,
+                "target_datacenter": "FI-HELSINKI-01",
+                "recommended_start": "2026-11-03T11:00:00Z",
+                "recommended_end": "2026-11-03T13:00:00Z",
+                "estimated_cost_eur": 8.51,
+                "baseline_cost_eur": 9.3725,
+                "estimated_savings_eur": 0.8625,
+                "estimated_savings_percent": 9.20245,
+                "is_fallback": False,
+                "hourly_costs": [
+                    {
+                        "timestamp": "2026-11-03T11:00:00Z",
+                        "minutes": 60,
+                        "price_eur_per_mwh": 39,
+                        "temperature_c": 4.5,
+                        "pue": 1.15,
+                        "cost_eur": 4.485,
+                        "price_is_estimated": False,
+                    },
+                    {
+                        "timestamp": "2026-11-03T12:00:00Z",
+                        "minutes": 60,
+                        "price_eur_per_mwh": 35,
+                        "temperature_c": 5.0,
+                        "pue": 1.15,
+                        "cost_eur": 4.025,
+                        "price_is_estimated": False,
+                    },
+                ],
+            },
+        ],
+        "reason": None,
+        "search_timelines": [
+            {
+                "target_datacenter": "FI-HELSINKI-01",
+                "hours": [
+                    {
+                        "timestamp": "2026-11-03T11:00:00Z",
+                        "price_eur_per_mwh": 39,
+                        "temperature_c": 4.5,
+                        "price_is_estimated": False,
+                    },
+                    {
+                        "timestamp": "2026-11-03T12:00:00Z",
+                        "price_eur_per_mwh": 35,
+                        "temperature_c": 5.0,
+                        "price_is_estimated": False,
+                    },
+                ],
+            },
+        ],
+    }
+
+    resp = RecommendationResponse.model_validate(valid_response_payload)
     assert resp.recommendations[0].recommendation_id == 101
+    assert resp.search_timelines[0].target_datacenter == "FI-HELSINKI-01"
+    assert len(resp.search_timelines[0].hours) == 2
+
+    with pytest.raises(ValidationError):
+        RecommendationResponse.model_validate(
+            {k: v for k, v in valid_response_payload.items() if k != "search_timelines"}
+        )
+
+    with pytest.raises(ValidationError):
+        RecommendationResponse.model_validate(
+            {
+                **valid_response_payload,
+                "search_timelines": [
+                    {
+                        "target_datacenter": "FI-HELSINKI-01",
+                        "hours": [
+                            {
+                                "timestamp": "2026-11-03T11:00:00Z",
+                                "price_eur_per_mwh": 39,
+                                "temperature_c": 4.5,
+                                "pue": 1.15,
+                                "price_is_estimated": False,
+                            },
+                            {
+                                "timestamp": "2026-11-03T12:00:00Z",
+                                "price_eur_per_mwh": 35,
+                                "temperature_c": 5.0,
+                                "price_is_estimated": False,
+                            },
+                        ],
+                    },
+                ],
+            }
+        )
+
+    with pytest.raises(ValidationError):
+        RecommendationResponse.model_validate(
+            {
+                **valid_response_payload,
+                "search_timelines": [
+                    {
+                        "target_datacenter": "FI-HELSINKI-01",
+                        "hours": [
+                            {
+                                "timestamp": "2026-11-03T11:00:00Z",
+                                "price_eur_per_mwh": 39,
+                                "temperature_c": 4.5,
+                                "price_is_estimated": False,
+                            },
+                        ],
+                    },
+                ],
+            }
+        )
 
     err = ErrorResponse.model_validate(
         {

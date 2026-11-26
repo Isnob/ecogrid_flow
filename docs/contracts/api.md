@@ -68,7 +68,6 @@ Content-Type: application/json
 | `search_timelines[].hours[].timestamp` | дата/время UTC | Начало часа |
 | `search_timelines[].hours[].price_eur_per_mwh` | число | Цена электричества, EUR/МВт⋅ч |
 | `search_timelines[].hours[].temperature_c` | число или `null` | Температура, использованная для PUE |
-| `search_timelines[].hours[].pue` | число ≥ 1 | PUE данного ЦОД в этот час |
 | `search_timelines[].hours[].price_is_estimated` | boolean | Является ли цена оценочной |
 | `reason` | `null`, `no_confirmed_window` или `baseline_estimated` | Причина отсутствия основной рекомендации; при наличии основной всегда `null` |
 
@@ -119,8 +118,8 @@ Content-Type: application/json
   "search_timelines": [{
     "target_datacenter": "FI-HELSINKI-01",
     "hours": [
-      {"timestamp": "2026-11-03T10:00:00Z", "price_eur_per_mwh": 42.5, "temperature_c": 4, "pue": 1.15, "price_is_estimated": false},
-      {"timestamp": "2026-11-03T11:00:00Z", "price_eur_per_mwh": 39, "temperature_c": 4.5, "pue": 1.15, "price_is_estimated": false}
+      {"timestamp": "2026-11-03T10:00:00Z", "price_eur_per_mwh": 42.5, "temperature_c": 4, "price_is_estimated": false},
+      {"timestamp": "2026-11-03T11:00:00Z", "price_eur_per_mwh": 39, "temperature_c": 4.5, "price_is_estimated": false}
     ]
   }]
 }
@@ -150,8 +149,8 @@ Content-Type: application/json
   "search_timelines": [{
     "target_datacenter": "FI-HELSINKI-01",
     "hours": [
-      {"timestamp": "2026-11-04T07:00:00Z", "price_eur_per_mwh": 30, "temperature_c": 3, "pue": 1.15, "price_is_estimated": true},
-      {"timestamp": "2026-11-04T08:00:00Z", "price_eur_per_mwh": 30, "temperature_c": 3.5, "pue": 1.15, "price_is_estimated": true}
+      {"timestamp": "2026-11-04T07:00:00Z", "price_eur_per_mwh": 30, "temperature_c": 3, "price_is_estimated": true},
+      {"timestamp": "2026-11-04T08:00:00Z", "price_eur_per_mwh": 30, "temperature_c": 3.5, "price_is_estimated": true}
     ]
   }]
 }
