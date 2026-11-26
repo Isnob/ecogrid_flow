@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+import logging
 
 from .contracts import (
     DatacenterInput,
@@ -18,6 +19,7 @@ from .contracts import (
 PUE_FREE_COOLING_LIMIT_C = 10.0
 PUE_WARMING_SLOPE = 0.008
 EUR_PER_MWH_TO_EUR_PER_KWH = 1 / 1000
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -33,7 +35,10 @@ class _Window:
 def _pue(base_pue: float, temperature_c: float | None) -> float:
     """Return the hourly PUE from the model documented in docs/research/pue.md."""
 
-    if temperature_c is None or temperature_c <= PUE_FREE_COOLING_LIMIT_C:
+    if temperature_c is None:
+        logger.warning("temperature forecast is unavailable; using base_pue=%s", base_pue)
+        return base_pue
+    if temperature_c <= PUE_FREE_COOLING_LIMIT_C:
         return base_pue
     return base_pue + PUE_WARMING_SLOPE * (
         temperature_c - PUE_FREE_COOLING_LIMIT_C
@@ -300,9 +305,10 @@ def recommend(request: EngineRequest) -> EngineResponse:
 
     confirmed = _best_window(_candidate_windows(request, allow_estimated=False))
     all_windows = _candidate_windows(request, allow_estimated=True)
-    estimated = _best_window(
-        [window for window in all_windows if window.uses_estimated_price]
-    )
+    # The fallback scenario must compare every feasible window.  A real-price
+    # window can still be the best available option when the baseline uses an
+    # estimated price.
+    estimated = _best_window(all_windows)
 
     if confirmed is not None and not baseline.uses_estimated_price:
         primary = _recommendation(confirmed, baseline, request)
@@ -318,7 +324,7 @@ def recommend(request: EngineRequest) -> EngineResponse:
         return EngineResponse(
             job_id=request.job_id,
             recommendations=[],
-            reason="no_confirmed_window" if confirmed is None else "baseline_estimated",
+            reason="data_unavailable",
         )
 
     reason = "no_confirmed_window" if confirmed is None else "baseline_estimated"

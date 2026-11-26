@@ -83,7 +83,8 @@
 ```python
 from datetime import datetime, timezone
 
-from services.engine.contracts import EngineRequest, recommend
+from services.engine import recommend
+from services.engine.contracts import EngineRequest
 
 request = EngineRequest(
     job_id="job-123",

@@ -181,6 +181,49 @@ def test_baseline_estimated_excludes_confirmed_recommendation():
     assert len(response.recommendations) == 1
     assert response.recommendations[0].is_fallback is True
     assert response.recommendations[0].baseline_has_estimated_price is True
+    assert response.recommendations[0].recommended_start == START
+    assert response.recommendations[0].estimated_cost_eur == pytest.approx(1.2)
+
+
+def test_no_candidate_window_returns_data_unavailable():
+    request = _request(
+        [_datacenter("FI-1", [10])],
+        earliest_start=START + timedelta(minutes=30),
+        baseline_start=START + timedelta(minutes=30),
+        deadline_hours=1,
+    )
+
+    response = recommend(request)
+
+    assert response.reason == "data_unavailable"
+    assert response.recommendations == []
+
+
+def test_missing_temperature_uses_base_pue(caplog):
+    request = _request(
+        [_datacenter("FI-1", [100], temperatures=[None])],
+        deadline_hours=1,
+    )
+
+    response = recommend(request)
+
+    assert response.recommendations[0].hourly_costs[0].pue == pytest.approx(1.2)
+    assert "temperature forecast is unavailable" in caplog.text
+
+
+def test_returns_confirmed_and_fallback_recommendations_when_both_are_useful():
+    request = _request(
+        [_datacenter("FI-1", [10, 1], estimated=[False, True])],
+        deadline_hours=2,
+    )
+
+    response = recommend(request)
+
+    assert len(response.recommendations) == 2
+    assert response.recommendations[0].is_fallback is False
+    assert response.recommendations[1].is_fallback is True
+    assert response.recommendations[0].recommended_start == START
+    assert response.recommendations[1].recommended_start == START + timedelta(hours=1)
 
 
 def test_missing_baseline_data_returns_data_unavailable():
