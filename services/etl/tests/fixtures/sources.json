@@ -1,0 +1,47 @@
+{
+  "entsoe/acknowledgement_no_data.xml": {
+    "source_commit": "54420326c92ba63744ad5e3994df4f039f3d12f1",
+    "source_path": "tests/fixtures/entsoe/acknowledgement_no_data.xml",
+    "sha256": "5f45b5a54dc9593398f727285e882458c59d0a4f73d6c155ccea1738cb4d6da7"
+  },
+  "entsoe/de_lu_dst_winter_25h.xml": {
+    "source_commit": "54420326c92ba63744ad5e3994df4f039f3d12f1",
+    "source_path": "tests/fixtures/entsoe/de_lu_dst_winter_25h.xml",
+    "sha256": "69399e853b071a35bed42a844362532e56c1b84755a03c500cd464e93ac993ba"
+  },
+  "entsoe/de_lu_pt15m_two_series.xml": {
+    "source_commit": "54420326c92ba63744ad5e3994df4f039f3d12f1",
+    "source_path": "tests/fixtures/entsoe/de_lu_pt15m_two_series.xml",
+    "sha256": "848f71c5117c6a7fc7d712994251a5385a08d8c32f5b7c0daefb16d557beb99f"
+  },
+  "entsoe/fi_dst_summer_23h.xml": {
+    "source_commit": "54420326c92ba63744ad5e3994df4f039f3d12f1",
+    "source_path": "tests/fixtures/entsoe/fi_dst_summer_23h.xml",
+    "sha256": "979bc31a0a2f0e8db64bc1d17665584c7622eac872262e607ccdb23b31d6c902"
+  },
+  "entsoe/fi_pt15m_with_negative_prices.xml": {
+    "source_commit": "54420326c92ba63744ad5e3994df4f039f3d12f1",
+    "source_path": "tests/fixtures/entsoe/fi_pt15m_with_negative_prices.xml",
+    "sha256": "59947d226681a460902c7c0f83d8d6328955e2eeac0ce1fe63430bf8f7e618f0"
+  },
+  "entsoe/fi_pt60m_historical.xml": {
+    "source_commit": "54420326c92ba63744ad5e3994df4f039f3d12f1",
+    "source_path": "tests/fixtures/entsoe/fi_pt60m_historical.xml",
+    "sha256": "2489efca9afdacb20e7a39d17ce8ee6698427f2ffbb8ec196dfc26b386f972e5"
+  },
+  "entsoe/se3_pt15m_standard.xml": {
+    "source_commit": "54420326c92ba63744ad5e3994df4f039f3d12f1",
+    "source_path": "tests/fixtures/entsoe/se3_pt15m_standard.xml",
+    "sha256": "4302fbe58d33fa917e6dc6db7347b104ce2d4cc7676c036c118af50a6a68728c"
+  },
+  "open_meteo_forecast.json": {
+    "source_url": "https://api.open-meteo.com/v1/forecast?latitude=60.1695&longitude=24.9354&timezone=GMT&hourly=temperature_2m%2Crelative_humidity_2m%2Ccloud_cover%2Cwind_speed_10m%2Cshortwave_radiation&forecast_days=2",
+    "captured_at": "2026-11-05T09:52:41.965749+00:00",
+    "sha256": "bf9bc236424c86224f65870256884e4fea9586dc9f365ec2a19e8d12f503ea47"
+  },
+  "open_meteo_historical.json": {
+    "source_url": "https://archive-api.open-meteo.com/v1/archive?latitude=60.1695&longitude=24.9354&timezone=GMT&hourly=temperature_2m%2Crelative_humidity_2m%2Ccloud_cover%2Cwind_speed_10m%2Cshortwave_radiation&start_date=2023-10-01&end_date=2023-10-02",
+    "captured_at": "2026-11-05T09:52:42.439503+00:00",
+    "sha256": "46689287ae54e73f274d897150288ae50bd137d0ee580fac10746bd3b7b416ff"
+  }
+}
